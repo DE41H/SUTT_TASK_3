@@ -17,7 +17,7 @@ class Course(models.Model):
         verbose_name = 'Course'
         verbose_name_plural = 'Courses'
 
-    code = models.CharField(verbose_name='code', primary_key=True)
+    code = models.CharField(verbose_name='code')
     title = models.CharField(verbose_name='title')
     department = models.ForeignKey(to='courses.Department', on_delete=models.CASCADE)
 
