@@ -22,6 +22,7 @@ class ThreadAdmin(admin.ModelAdmin):
         extra = 0
         fields = ('author', 'raw_content', 'upvote_count', 'is_deleted')
         readonly_fields = ('author', 'raw_content', 'upvote_count') 
+        ordering = ('-created_at')
         classes = ['collapse']
 
     list_display = ('title', 'author', 'raw_content', 'category', 'reply_count', 'upvote_count', 'is_locked', 'is_deleted')
