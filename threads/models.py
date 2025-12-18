@@ -109,6 +109,15 @@ class Reply(models.Model):
             return '[This content has been removed by a moderator]'
         else:
             return str(self.raw_content)
+        
+    def update_upvotes(self, user) -> None:
+        if self.upvotes.filter(id=user.id).exists():
+            self.upvotes.remove(user)
+            self.upvote_count = models.F('upvote_count') - 1
+        else:
+            self.upvotes.add(user)
+            self.upvote_count = models.F('upvote_count') + 1
+        self.save(update_fields=['upvote_count'])
 
     def __str__(self) -> str:
         return f'Reply to: {self.thread}\nAuthor: {self.author}\nContent: {self.content}'
