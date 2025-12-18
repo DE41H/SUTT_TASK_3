@@ -24,6 +24,7 @@ class ThreadAdmin(admin.ModelAdmin):
         readonly_fields = ('author', 'raw_content', 'upvote_count')
         classes = ['collapse']
 
+    list_select_related = ('author', 'category')
     list_display = ('title', 'author', 'raw_content', 'category', 'reply_count', 'upvote_count', 'is_locked', 'is_deleted')
     readonly_fields = ('title', 'author', 'raw_content', 'reply_count', 'upvote_count')
     list_filter = ('category', 'is_locked', 'is_deleted', 'created_at')
@@ -44,6 +45,7 @@ class ThreadAdmin(admin.ModelAdmin):
 
 @admin.register(Report)
 class ReportAdmin(admin.ModelAdmin):
+    list_select_related = ('reporter',)
     list_display = ('reporter', 'target', 'reason', 'status')
     readonly_fields = ('reporter', 'target', 'reason')
     list_filter = ('status', )

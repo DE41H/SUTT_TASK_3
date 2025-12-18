@@ -43,18 +43,17 @@ class Tag(models.Model):
 
     def __str__(self) -> str:
         return f'Tag Name: {self.name}\nTag Color: {self.color}'
-    
-
-class ActiveManager(models.Manager):
-
-    def get_queryset(self) -> models.QuerySet:
-        return super().get_queryset().filter(is_deleted=False)
 
 
 class Post(models.Model):
 
     class Meta:
         abstract = True
+
+    class ActiveManager(models.Manager):
+
+        def get_queryset(self) -> models.QuerySet:
+            return super().get_queryset().filter(is_deleted=False).select_related('author')
 
     objects = models.Manager()
     active = ActiveManager()

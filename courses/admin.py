@@ -22,11 +22,12 @@ class CourseAdmin(admin.ModelAdmin):
 
         def link_display(self, obj) -> str:
             if obj.link:
-                link = f'<a href="{obj.link}" target="_blank">Open Link</a>"'
+                link = f'<a href="{obj.link}" target="_blank">Open Link</a>'
                 return format_html(link)
             return 'No Link'
 
+    list_select_related = ('department', )
     list_display = ('code', 'title', 'department')
     list_filter = ('department', )
     inlines = [ResourceInline]
-    search_fields = ('code', 'title')
+    search_fields = ('code', 'title', 'department__name')
