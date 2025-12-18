@@ -18,7 +18,7 @@ class Category(models.Model):
         if not self.slug:
             slug = text.slugify(self.name)
             count = 1
-            while Category.objects.filter(slug=f'slug-{count}').exists():
+            while Category.objects.filter(slug=f'{slug}-{count}').exists():
                 count += 1
             self.slug = f'{slug}-{count}'
         super().save(*args, **kwargs)
@@ -59,10 +59,10 @@ class Post(models.Model):
     objects = models.Manager()
     active = ActiveManager()
 
-    upvotes = models.ManyToManyField(verbose_name='upvotes', to=settings.AUTH_USER_MODEL, blank=True, related_name='upvoted_threads')
+    upvotes = models.ManyToManyField(verbose_name='upvotes', to=settings.AUTH_USER_MODEL, blank=True, related_name='upvoted_%(class)s')
     upvote_count = models.PositiveIntegerField(verbose_name='upvote count', default=0, db_index=True)
     raw_content = models.TextField(verbose_name='raw content')
-    author = models.ForeignKey(verbose_name='author', to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='threads')
+    author = models.ForeignKey(verbose_name='author', to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='%(class)s')
     created_at = models.DateTimeField(verbose_name='created at', default=timezone.now, db_index=True)
     is_deleted = models.BooleanField(verbose_name='is deleted', default=False, db_index=True)
 
