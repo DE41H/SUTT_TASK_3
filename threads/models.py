@@ -1,7 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.core import exceptions, validators
-from django.utils import timezone, text
+from django.utils import text
 
 # Create your models here.
 
@@ -62,7 +62,7 @@ class Post(models.Model):
     upvote_count = models.PositiveIntegerField(verbose_name='upvote count', default=0, db_index=True)
     raw_content = models.TextField(verbose_name='raw content')
     author = models.ForeignKey(verbose_name='author', to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='%(class)s')
-    created_at = models.DateTimeField(verbose_name='created at', default=timezone.now, db_index=True)
+    created_at = models.DateTimeField(verbose_name='created at', auto_now_add=True, db_index=True)
     is_deleted = models.BooleanField(verbose_name='is deleted', default=False, db_index=True)
 
     @property
