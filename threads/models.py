@@ -75,11 +75,11 @@ class Post(models.Model):
     def update_upvotes(self, user) -> None:
         if self.upvotes.filter(id=user.id).exists():
             self.upvotes.remove(user)
-            self.upvote_count = models.F('upvote_count') - 1
+            amount = -1
         else:
             self.upvotes.add(user)
-            self.upvote_count = models.F('upvote_count') + 1
-        self.save(update_fields=['upvote_count'])
+            amount = 1
+        self.objects.filter(pk=self.pk).update(upvote_count=models.F('upvote_count') + amount)
 
 
 class Thread(Post):
@@ -129,8 +129,7 @@ class Reply(Post):
         pk = self.pk
         super().save(*args, **kwargs)
         if pk is None:
-            self.thread.reply_count = models.F('reply_count') + 1
-            self.thread.save(update_fields=['reply_count'])
+            Thread.objects.filter(pk=self.thread.pk).update(reply_count=models.F('reply_count') + 1)
 
     def __str__(self) -> str:
         return f'Reply to: {self.thread}\nAuthor: {self.author}\nContent: {self.content}'
