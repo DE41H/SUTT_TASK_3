@@ -44,7 +44,7 @@
                 <button type="submit" class="bg-red-600 text-white px-6 py-2.5 rounded-xl font-medium hover:bg-red-700 transition-colors flex items-center gap-2">
                     <i data-lucide="flag" class="w-4 h-4"></i> Submit Report
                 </button>
-                <a href="{{ request.META.get('HTTP_REFERER', '/') }}" class="text-slate-500 hover:text-slate-700 text-sm font-medium px-4">
+                <a href="{{ back_url }}" class="text-slate-500 hover:text-slate-700 text-sm font-medium px-4">
                     Cancel
                 </a>
             </div>

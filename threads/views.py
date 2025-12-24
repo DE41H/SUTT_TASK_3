@@ -86,7 +86,7 @@ class ThreadDetailView(LoginRequiredMixin, FormMixin, generic.DetailView):
         return kwargs
     
     def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        self.order_by = kwargs.pop('order_by')
+        self.order_by = kwargs.pop('order_by', None)
         self.author = self.request.user
         if self.order_by not in ('-created_at', 'upvote_count'):
             raise Http404('Invalid ordering parameter!')
@@ -112,7 +112,7 @@ class ReportCreateView(LoginRequiredMixin, generic.CreateView):
     template_name = 'forum/report_form.html'
 
     def get_success_url(self) -> str:
-        return reverse_lazy('threads:thread_detail', kwargs={'pk': self.thread_pk})
+        return reverse_lazy('threads:thread_detail', kwargs={'pk': self.pk, 'order_by': self.order_by})
 
     def form_valid(self, form: BaseModelForm) -> HttpResponse:
         form.instance.reporter = self.request.user
@@ -123,8 +123,11 @@ class ReportCreateView(LoginRequiredMixin, generic.CreateView):
         return super().form_valid(form)
     
     def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        self.type = self.kwargs['type']
-        self.pk = self.kwargs['pk']
+        self.type = kwargs.pop('type', None)
+        self.pk = kwargs.pop('pk', None)
+        self.order_by = kwargs.pop('order_by', None)
+        if self.order_by not in ('-created_at', 'upvote_count'):
+            raise Http404('Invalid content parameters!')
         if self.type == 'thread':
             self.object = get_object_or_404(Thread, pk=self.pk)
             self.thread_pk = self.pk
@@ -144,6 +147,7 @@ class ReportCreateView(LoginRequiredMixin, generic.CreateView):
         context =  super().get_context_data(**kwargs)
         context['type'] = self.type
         context['object'] = self.object
+        context['back_url'] = self.get_success_url()
         return context
     
     
@@ -151,16 +155,20 @@ class UpvoteView(LoginRequiredMixin, generic.RedirectView):
     permanent = False
 
     def get_redirect_url(self, *args: Any, **kwargs: Any) -> str | None:
-        return self.request.META.get('HTTP_REFERER', reverse_lazy('threads:category '))
+        return self.request.META.get('HTTP_REFERER', reverse_lazy('threads:category'))
     
     def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        obj_type = self.kwargs.get('type')
-        pk = self.kwargs.get('pk')
-        if obj_type == 'thread':
-            obj = get_object_or_404(Thread, pk=pk)
-        elif obj_type == 'reply':
-            obj = get_object_or_404(Reply, pk=pk)
+        self.obj.update_upvotes(self.user)
+        return super().post(request, *args, **kwargs)
+    
+    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        self.user = self.request.user
+        self.type = kwargs.pop('type', None)
+        self.pk = kwargs.pop('pk', None)
+        if self.type == 'thread':
+            self.obj = get_object_or_404(Thread, pk=self.pk)
+        elif self.type == 'reply':
+            self.obj = get_object_or_404(Reply, pk=self.pk)
         else:
             raise Http404('Invalid content parameters!')
-        obj.update_upvotes(request.user)
-        return super().post(request, *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
