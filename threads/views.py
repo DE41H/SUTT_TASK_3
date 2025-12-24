@@ -40,7 +40,8 @@ class ThreadListView(generic.ListView):
         if self.order_by not in ('-created_at', 'upvote_count'):
             raise Http404('Invalid content parameters!')
         return super().dispatch(request, *args, **kwargs)
-    
+
+
 class ThreadCreateView(LoginRequiredMixin, generic.CreateView):
     model = Thread
     form_class = ThreadCreateForm
@@ -73,6 +74,7 @@ class ThreadCreateView(LoginRequiredMixin, generic.CreateView):
         self.category = get_object_or_404(Category, pk=self.pk)
         return super().dispatch(request, *args, **kwargs)
 
+
 class ThreadDetailView(LoginRequiredMixin, FormMixin, generic.DetailView):
     model = Thread
     template_name = 'threads/thread_detail.html'
@@ -82,28 +84,6 @@ class ThreadDetailView(LoginRequiredMixin, FormMixin, generic.DetailView):
     def get_success_url(self) -> str:
         return self.request.path
 
-    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        context = super().get_context_data(**kwargs)
-        context['replies'] = self.object.replies.filter(is_deleted=False).select_related('author').order_by(self.order_by) # type: ignore
-        return context
-    
-    def get_form_kwargs(self) -> dict[str, Any]:
-        kwargs = super().get_form_kwargs()
-        kwargs['author'] = self.request.user
-        return kwargs
-    
-    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        self.order_by = kwargs.pop('order_by', None)
-        self.author = self.request.user
-        if self.order_by not in ('-created_at', 'upvote_count'):
-            raise Http404('Invalid ordering parameter!')
-        return super().dispatch(request, *args, **kwargs)
-    
-    def form_valid(self, form: Any) -> HttpResponse:
-        form.instance.author = self.request.user
-        form.instance.thread = self.object # type: ignore
-        return super().form_valid(form)
-    
     def post(self, request, *args, **kwargs): 
         form = self.get_form()
         if form.is_valid():
@@ -111,16 +91,41 @@ class ThreadDetailView(LoginRequiredMixin, FormMixin, generic.DetailView):
         else:
             self.object = self.get_object()
             return self.form_invalid(form)
+    
+    def form_valid(self, form: Any) -> HttpResponse:
+        form.instance.author = self.author
+        form.instance.thread = self.get_object()
+        return super().form_valid(form)
+    
+    def get_form_kwargs(self) -> dict[str, Any]:
+        kwargs = super().get_form_kwargs()
+        kwargs['author'] = self.author
+        return kwargs
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        context['replies'] = self.get_object().replies.filter(is_deleted=False).select_related('author').order_by(self.order_by) # type: ignore
+        return context
+    
+    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        self.order_by = kwargs.get('order_by')
+        self.author = self.request.user
+        if self.order_by not in ('-created_at', 'upvote_count'):
+            raise Http404('Invalid ordering parameter!')
+        return super().dispatch(request, *args, **kwargs)
 
 
 class ReportCreateView(LoginRequiredMixin, generic.CreateView):
     model = Report
     form_class = ReportCreateForm
-    template_name = 'threads/report_form.html'
+    template_name = 'threads/report_create.html'
 
     def get_success_url(self) -> str:
-        return reverse_lazy('threads:thread_detail', kwargs={'pk': self.pk, 'order_by': self.order_by})
-
+        next = self.request.GET.get('next')
+        if next and url_has_allowed_host_and_scheme(url=next, allowed_hosts={self.request.get_host()}):
+            return next
+        return reverse_lazy('threads:thread_list', kwargs={'pk': self.thread_pk, 'order_by': '-created_at'})
+    
     def form_valid(self, form: BaseModelForm) -> HttpResponse:
         form.instance.reporter = self.request.user
         if self.type == 'thread':
@@ -128,22 +133,6 @@ class ReportCreateView(LoginRequiredMixin, generic.CreateView):
         elif self.type == 'reply':
             form.instance.reply = self.object
         return super().form_valid(form)
-    
-    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        self.type = kwargs.pop('type', None)
-        self.pk = kwargs.pop('pk', None)
-        self.order_by = kwargs.pop('order_by', None)
-        if self.order_by not in ('-created_at', 'upvote_count'):
-            raise Http404('Invalid content parameters!')
-        if self.type == 'thread':
-            self.object = get_object_or_404(Thread, pk=self.pk)
-            self.thread_pk = self.pk
-        elif self.type == 'reply':
-            self.object = get_object_or_404(Reply, pk=self.pk)
-            self.thread_pk = self.object.thread.pk
-        else:
-            raise Http404('Invalid content parameters!')
-        return super().dispatch(request, *args, **kwargs)
     
     def get_form_kwargs(self) -> dict[str, Any]:
         kwargs = super().get_form_kwargs()
@@ -157,25 +146,46 @@ class ReportCreateView(LoginRequiredMixin, generic.CreateView):
         context['back_url'] = self.get_success_url()
         return context
     
-    
+    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        self.type = kwargs.get('type')
+        self.pk = kwargs.get('pk')
+        self.order_by = kwargs.get('order_by')
+        if self.order_by not in ('-created_at', 'upvote_count'):
+            raise Http404('Invalid content parameters!')
+        if self.type == 'thread':
+            self.object = get_object_or_404(Thread, pk=self.pk)
+            self.thread_pk = self.pk
+        elif self.type == 'reply':
+            self.object = get_object_or_404(Reply, pk=self.pk)
+            self.thread_pk = self.object.thread.pk
+        else:
+            raise Http404('Invalid content parameters!')
+        return super().dispatch(request, *args, **kwargs)
+
+
 class UpvoteView(LoginRequiredMixin, generic.RedirectView):
     permanent = False
 
     def get_redirect_url(self, *args: Any, **kwargs: Any) -> str | None:
-        return self.request.META.get('HTTP_REFERER', reverse_lazy('threads:category'))
+        next = self.request.GET.get('next')
+        if next and url_has_allowed_host_and_scheme(url=next, allowed_hosts={self.request.get_host()}):
+            return next
+        return reverse_lazy('threads:thread_list', kwargs={'pk': self.thread_pk, 'order_by': '-created_at'})
     
     def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        self.obj.update_upvotes(self.user)
+        self.object.update_upvotes(self.user)
         return super().post(request, *args, **kwargs)
     
     def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         self.user = self.request.user
-        self.type = kwargs.pop('type', None)
-        self.pk = kwargs.pop('pk', None)
+        self.type = kwargs.get('type')
+        self.pk = kwargs.get('pk')
         if self.type == 'thread':
-            self.obj = get_object_or_404(Thread, pk=self.pk)
+            self.object = get_object_or_404(Thread, pk=self.pk)
+            self.thread_pk = self.pk
         elif self.type == 'reply':
-            self.obj = get_object_or_404(Reply, pk=self.pk)
+            self.object = get_object_or_404(Reply, pk=self.pk)
+            self.thread_pk = self.object.thread.pk
         else:
             raise Http404('Invalid content parameters!')
         return super().dispatch(request, *args, **kwargs)
