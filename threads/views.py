@@ -37,7 +37,7 @@ class ThreadListView(generic.ListView):
     def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         self.category: Category = get_object_or_404(Category, slug=self.kwargs['slug'])
         self.order_by = kwargs.get('order_by')
-        if self.order_by not in ('-created_at', 'upvote_count'):
+        if self.order_by not in ('-created_at', '-upvote_count'):
             raise Http404('Invalid content parameters!')
         return super().dispatch(request, *args, **kwargs)
 
@@ -96,7 +96,7 @@ class ThreadDetailView(LoginRequiredMixin, FormMixin, generic.DetailView):
         form.instance.author = self.author
         form.instance.thread = self.get_object()
         return super().form_valid(form)
-    
+
     def get_form_kwargs(self) -> dict[str, Any]:
         kwargs = super().get_form_kwargs()
         kwargs['author'] = self.author
@@ -110,7 +110,7 @@ class ThreadDetailView(LoginRequiredMixin, FormMixin, generic.DetailView):
     def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         self.order_by = kwargs.get('order_by')
         self.author = self.request.user
-        if self.order_by not in ('-created_at', 'upvote_count'):
+        if self.order_by not in ('-created_at', '-upvote_count'):
             raise Http404('Invalid ordering parameter!')
         return super().dispatch(request, *args, **kwargs)
 
@@ -149,9 +149,6 @@ class ReportCreateView(LoginRequiredMixin, generic.CreateView):
     def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         self.type = kwargs.get('type')
         self.pk = kwargs.get('pk')
-        self.order_by = kwargs.get('order_by')
-        if self.order_by not in ('-created_at', 'upvote_count'):
-            raise Http404('Invalid content parameters!')
         if self.type == 'thread':
             self.object = get_object_or_404(Thread, pk=self.pk)
             self.thread_pk = self.pk
