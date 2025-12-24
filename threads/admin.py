@@ -46,14 +46,8 @@ class ThreadAdmin(admin.ModelAdmin):
 @admin.register(Report)
 class ReportAdmin(admin.ModelAdmin):
     list_select_related = ('reporter',)
-    list_display = ('reporter', 'target', 'reason', 'status')
-    readonly_fields = ('reporter', 'target', 'reason')
+    list_display = ('reporter', 'thread', 'reply', 'reason', 'status')
+    readonly_fields = ('reporter', 'thread', 'reply', 'reason')
     list_filter = ('status', )
     list_editable = ('status', )
     search_fields = ('reporter__username', 'reason')
-
-    def target(self, obj):
-        if obj.thread:
-            return f'Thread titled {obj.thread.title} by {obj.thread.author}'
-        else:
-            return f'Reply by {obj.reply.author}'
