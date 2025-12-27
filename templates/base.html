@@ -1,41 +1,94 @@
+<!-- base.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Forum OS</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <title>{% block title %}Threads{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        input[type="text"], textarea, select {
-            width: 100%; padding: 0.75rem; border-radius: 0.75rem;
-            border: 1px solid #e2e8f0; background-color: #ffffff; transition: all 0.2s;
+        :root {
+            --primary: #3b82f6;
+            --primary-dark: #1e40af;
+            --secondary: #f8fafc;
+            --accent: #10b981;
+            --danger: #ef4444;
         }
-        input[type="text"]:focus, textarea:focus {
-            outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-        }
+        body { font-family: 'Inter', sans-serif; }
+        .glass { backdrop-filter: blur(16px); }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-900 font-sans antialiased">
-    <nav class="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-            <a href="{% url 'threads:category_list' %}" class="font-bold text-xl tracking-tight text-indigo-600">FORUM_OS</a>
-            <div class="flex items-center space-x-4">
-                {% if user.is_authenticated %}
-                    <span class="text-sm text-slate-500 hidden md:block">Hi, {{ user.username }}</span>
-                    <form method="post" action="{% url 'account_logout' %}">
-                        {% csrf_token %}
-                        <button type="submit" class="text-sm font-medium text-red-500 hover:text-red-600">Logout</button>
-                    </form>
-                {% else %}
-                    <a href="{% url 'account_login' %}?next={{ request.path }}" class="text-sm font-medium text-indigo-600">Login</a>
-                {% endif %}
+<body class="bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="glass backdrop-blur-xl bg-white/80 border-b border-gray-200/50 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="{% url 'threads:category_list' %}" class="flex items-center space-x-2 text-xl font-bold text-gray-900">
+                        <i class="fas fa-comments text-primary"></i>
+                        <span>Threads</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    {% if user.is_authenticated %}
+                        <div class="relative">
+                            <a href="{% url 'threads:thread_list' slug='general' orderby='-created_at' %}" class="px-3 py-2 text-sm font-medium text-gray-700 hover:text-primary transition-colors">
+                                <i class="fas fa-th-large mr-1"></i>Browse
+                            </a>
+                        </div>
+                        <div class="relative">
+                            <a href="{% url 'threads:report_list' %}" class="px-3 py-2 text-sm font-medium text-gray-700 hover:text-primary transition-colors">
+                                <i class="fas fa-flag mr-1"></i>Reports
+                            </a>
+                        </div>
+                        <div class="w-px h-6 bg-gray-200 mx-4"></div>
+                        <div class="flex items-center space-x-3">
+                            <span class="text-sm text-gray-500">{{ user.username }}</span>
+                            <div class="w-8 h-8 bg-gradient-to-r from-primary to-primary-dark rounded-full flex items-center justify-center text-white font-semibold">
+                                {{ user.username.0|upper }}
+                            </div>
+                        </div>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-primary transition-colors">Sign In</a>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </nav>
-    <main class="max-w-5xl mx-auto px-4 py-8">
+
+    <!-- Breadcrumb -->
+    {% if breadcrumbs %}
+    <div class="glass backdrop-blur-xl bg-white/70 border-b border-gray-200/50">
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <ol class="flex items-center space-x-2 text-sm text-gray-500">
+                {% for crumb in breadcrumbs %}
+                    {% if not forloop.last %}
+                        <li><a href="{{ crumb.url }}" class="hover:text-gray-900">{{ crumb.title }}</a></li>
+                        <li><i class="fas fa-chevron-right mx-1"></i></li>
+                    {% else %}
+                        <li class="font-medium text-gray-900">{{ crumb.title }}</li>
+                    {% endif %}
+                {% endfor %}
+            </ol>
+        </nav>
+    </div>
+    {% endif %}
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {% block content %}{% endblock %}
     </main>
-    <script>lucide.createIcons();</script>
+
+    <!-- Footer -->
+    <footer class="glass backdrop-blur-xl bg-white/80 border-t border-gray-200/50 mt-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center text-sm text-gray-500">
+            © 2025 Threads. Built with Django.
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    {% block extra_js %}{% endblock %}
 </body>
-</html>
+</html>[file:1][file:4]
