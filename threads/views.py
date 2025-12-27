@@ -11,6 +11,7 @@ from django.views.generic.edit import FormMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
 from threads.models import *
 from threads.forms import *
+from threads.utils import *
 
 # Create your views here.
 
@@ -27,14 +28,18 @@ class ThreadListView(generic.ListView):
     paginate_by = 10
 
     def get_queryset(self) -> QuerySet[Any]:
-        return Thread.objects.filter(category=self.category).order_by(self.order_by)
+        if self.query is None or self.query == '':
+            return Thread.objects.filter(category=self.category).order_by(self.order_by)
+        return fuzzy_search(self.query).filter(category=self.category).order_by(self.order_by)
     
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         context['category'] = self.category
+        context['query'] = self.query
         return context
     
     def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        self.query = self.request.GET.get('q')
         self.category: Category = get_object_or_404(Category, slug=self.kwargs['slug'])
         self.order_by = kwargs.get('order_by')
         if self.order_by not in ('-created_at', '-upvote_count'):

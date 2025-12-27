@@ -89,6 +89,15 @@ class Post(models.Model):
         return super().save(*args, **kwargs)
 
 
+class Trigram(models.Model):
+    
+    class Meta:
+        verbose_name = 'Trigram'
+        verbose_name_plural = 'Trigrams'
+    
+    value = models.CharField(verbose_name='value', max_length=3, db_index=True, unique=True)
+
+
 class Thread(Post):
 
     class Meta(Post.Meta):
@@ -99,11 +108,28 @@ class Thread(Post):
     
     category = models.ForeignKey(verbose_name='category', to='threads.Category', on_delete=models.CASCADE, related_name='threads')
     title = models.CharField(verbose_name='title', max_length=255)
+    trigrams = models.ManyToManyField(verbose_name='trigrams', to='threads.Trigram', blank=True, related_name='threads')
     tagged_courses = models.ManyToManyField(verbose_name='tagged courses', to='courses.Course', blank=True, related_name='tagged')
     tagged_documents = models.ManyToManyField(verbose_name='tagged documents', to='courses.Resource', blank=True, related_name='tagged')
     tags = models.ManyToManyField(verbose_name='tags', to='threads.Tag', blank=True, related_name='tagged')
     is_locked = models.BooleanField(verbose_name='is locked', default=False)
     reply_count = models.PositiveIntegerField(verbose_name='reply_count', default=0)
+
+    def _save_trigrams(self) -> None:
+        with transaction.atomic():
+            title = f'  {self.title.lower()}  '
+            values: set[str] = set([title[i:i+3] for i in range(len(title) - 2)])
+            old: set[str] = set(Trigram.objects.filter(value__in=values).values_list('value', flat=True))
+            new = values - old
+            Trigram.objects.bulk_create([Trigram(value=value) for value in new])
+            trigrams = Trigram.objects.filter(value__in=values)
+            self.trigrams.set(trigrams)
+
+    def save(self, *args, **kwargs) -> None:
+        pk = self.pk
+        super().save(*args, **kwargs)
+        if pk is None:
+            self._save_trigrams()
 
     def __str__(self) -> str:
         return f'Thread Title: {self.title}\nAuthor: {self.author}\nContent: {self.content}'
