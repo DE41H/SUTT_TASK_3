@@ -93,7 +93,7 @@ class Post(models.Model):
         super().save(*args, **kwargs)
         User = get_user_model()
         mentions = [i for i in self.raw_content.split(' ') if i.startswith('@')]
-        mentioned_users = User.objects.filter(name__in=mentions)
+        mentioned_users = User.objects.filter(username__in=mentions).exclude(pk=self.author.pk)
         subject = f'You have been mentioned in a {self.__class__.__name__}'
         if isinstance(self, Thread):
             pk = self.pk

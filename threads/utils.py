@@ -1,5 +1,4 @@
 import threading
-from typing import Any
 from django.core.mail import send_mail, send_mass_mail
 from django.conf import settings
 from threads.models import *

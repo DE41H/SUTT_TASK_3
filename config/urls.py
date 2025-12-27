@@ -25,7 +25,8 @@ urlpatterns = [
     path('', RedirectView.as_view(pattern_name='threads:category_list', permanent=True)),
     path('admin/', admin.site.urls),
     path('accounts/', include('allauth.urls'), name='accounts'),
-    path('threads/', include('threads.urls'), name='threads')
+    path('threads/', include('threads.urls'), name='threads'),
+    path('courses/', include('courses.urls'), name='courses')
 ]
 
 if settings.DEBUG:

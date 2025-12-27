@@ -8,7 +8,7 @@ from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy
 from django.views import generic
 from django.views.generic.edit import FormMixin
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from threads.models import *
 from threads.forms import *
 from threads.utils import *
@@ -167,6 +167,19 @@ class ReportCreateView(LoginRequiredMixin, generic.CreateView):
         else:
             raise Http404('Invalid content parameters!')
         return super().dispatch(request, *args, **kwargs)
+    
+
+class ReportListView(LoginRequiredMixin, UserPassesTestMixin, generic.ListView):
+    model = Report
+    template_name = 'threads/report_list.html'
+    context_object_name = 'reports'
+    paginate_by = 10
+
+    def get_queryset(self) -> QuerySet[Any]:
+        return Report.objects.order_by('status', '-created_at')
+    
+    def test_func(self) -> bool | None:
+        return self.request.user.is_staff
 
 
 class UpvoteView(LoginRequiredMixin, generic.RedirectView):
@@ -195,3 +208,58 @@ class UpvoteView(LoginRequiredMixin, generic.RedirectView):
         else:
             raise Http404('Invalid content parameters!')
         return super().dispatch(request, *args, **kwargs)
+    
+
+class DeleteView(LoginRequiredMixin, UserPassesTestMixin, generic.RedirectView):
+    permanent = False
+
+    def get_redirect_url(self, *args: Any, **kwargs: Any) -> str | None:
+        next = self.request.GET.get('next')
+        if next and url_has_allowed_host_and_scheme(url=next, allowed_hosts={self.request.get_host()}):
+            return next
+        return reverse_lazy('threads:thread_list', kwargs={'pk': self.thread_pk, 'order_by': '-created_at'})
+    
+    def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        self.object.soft_delete()
+        return super().post(request, *args, **kwargs)
+    
+    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        self.user = self.request.user
+        self.type = kwargs.get('type')
+        self.pk = kwargs.get('pk')
+        if self.type == 'thread':
+            self.object = get_object_or_404(Thread, pk=self.pk)
+            self.thread_pk = self.pk
+        elif self.type == 'reply':
+            self.object = get_object_or_404(Reply, pk=self.pk)
+            self.thread_pk = self.object.thread.pk
+        else:
+            raise Http404('Invalid content parameters!')
+        return super().dispatch(request, *args, **kwargs)
+    
+    def test_func(self) -> bool | None:
+        return self.request.user.is_staff
+    
+
+class LockView(LoginRequiredMixin, UserPassesTestMixin, generic.RedirectView):
+    permanent = False
+
+    def get_redirect_url(self, *args: Any, **kwargs: Any) -> str | None:
+        next = self.request.GET.get('next')
+        if next and url_has_allowed_host_and_scheme(url=next, allowed_hosts={self.request.get_host()}):
+            return next
+        return reverse_lazy('threads:thread_list', kwargs={'pk': self.pk, 'order_by': '-created_at'})
+    
+    def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        self.object.is_locked = True
+        self.object.save(updated_fields=['is_locked'])
+        return super().post(request, *args, **kwargs)
+    
+    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        self.user = self.request.user
+        self.pk = kwargs.get('pk')
+        self.object = get_object_or_404(Thread, pk=self.pk)
+        return super().dispatch(request, *args, **kwargs)
+    
+    def test_func(self) -> bool | None:
+        return self.request.user.is_staff
