@@ -87,7 +87,7 @@
         /* Responsive */
         @media (max-width: 992px) {
             .sidebar { transform: translateX(-100%); transition: transform 0.3s ease; }
-            .sidebar.show { transform: translateX(0); shadow: 0 0 50px rgba(0,0,0,0.2); }
+            .sidebar.show { transform: translateX(0); box-shadow: 0 0 50px rgba(0,0,0,0.2); } /* <--- FIXED */
             .main-content { margin-left: 0; padding: 1.5rem; }
         }
         
