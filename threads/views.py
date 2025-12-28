@@ -78,6 +78,37 @@ class ThreadCreateView(LoginRequiredMixin, generic.CreateView):
         self.author = self.request.user
         self.category = get_object_or_404(Category, pk=self.pk)
         return super().dispatch(request, *args, **kwargs)
+    
+
+class ThreadEditView(LoginRequiredMixin, UserPassesTestMixin, generic.UpdateView):
+    model = Thread
+    fields = ['title', 'raw_content', 'tags']
+    template_name = 'threads/thread_edit.html'
+    context_object_name = 'thread'
+
+    def get_success_url(self) -> str:
+        next = self.request.GET.get('next')
+        if next and url_has_allowed_host_and_scheme(url=next, allowed_hosts={self.request.get_host()}):
+            return next
+        return reverse_lazy('threads:thread_detail', kwargs={'pk': self.object.pk, 'order_by': '-created_at'}) # type: ignore
+
+    def test_func(self) -> bool | None:
+        return self.object.author == self.request.user # type: ignore
+    
+class ReplyEditView(LoginRequiredMixin, UserPassesTestMixin, generic.UpdateView):
+    model = Reply
+    fields = ['raw_content']
+    template_name = 'threads/reply_edit.html'
+    context_object_name = 'reply'
+
+    def get_success_url(self) -> str:
+        next = self.request.GET.get('next')
+        if next and url_has_allowed_host_and_scheme(url=next, allowed_hosts={self.request.get_host()}):
+            return next
+        return reverse_lazy('threads:thread_detail', kwargs={'pk': self.object.thread.pk, 'order_by': '-created_at'}) # type: ignore
+
+    def test_func(self) -> bool | None:
+        return self.object.author == self.request.user # type: ignore
 
 
 class ThreadDetailView(LoginRequiredMixin, FormMixin, generic.DetailView):
@@ -181,6 +212,33 @@ class ReportListView(LoginRequiredMixin, UserPassesTestMixin, generic.ListView):
     
     def test_func(self) -> bool | None:
         return self.request.user.is_staff
+    
+
+class ReportUpdateStatusView(LoginRequiredMixin, UserPassesTestMixin, generic.RedirectView):
+    permanent = False
+
+    def get_redirect_url(self, *args: Any, **kwargs: Any) -> str | None:
+        next = self.request.GET.get('next')
+        if next and url_has_allowed_host_and_scheme(url=next, allowed_hosts={self.request.get_host()}):
+            return next
+        return reverse_lazy('threads:thread_list', kwargs={'slug': self.slug, 'order_by': '-created_at'})
+    
+    def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        return super().post(request, *args, **kwargs)
+    
+    def test_func(self) -> bool | None:
+        return self.request.user.is_staff
+    
+    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        pk = kwargs.get('pk')
+        self.object = get_object_or_404(Report, pk=pk)
+        if self.object.thread:
+            self.slug = self.object.thread.category.slug
+        elif self.object.reply:
+            self.slug = self.object.reply.thread.category.slug
+        else:
+            raise Http404('Invalid content parameters!')
+        return super().dispatch(request, *args, **kwargs)
 
 
 class UpvoteView(LoginRequiredMixin, generic.RedirectView):
@@ -251,8 +309,7 @@ class LockView(LoginRequiredMixin, UserPassesTestMixin, generic.RedirectView):
         return reverse_lazy('threads:thread_list', kwargs={'slug': self.category.slug, 'order_by': '-created_at'})
     
     def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        self.object.is_locked = True
-        self.object.save(update_fields=['is_locked'])
+        self.object.update_lock()
         return super().post(request, *args, **kwargs)
     
     def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:

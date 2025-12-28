@@ -139,6 +139,14 @@ class Thread(Post):
     is_locked = models.BooleanField(verbose_name='is locked', default=False)
     reply_count = models.PositiveIntegerField(verbose_name='reply_count', default=0)
 
+    def update_lock(self):
+        with transaction.atomic():
+            if self.is_locked:
+                self.is_locked = False
+            else:
+                self.is_locked = True
+            self.save(update_fields=['is_locked'])
+
     def _save_trigrams(self) -> None:
         with transaction.atomic():
             title = f'  {self.title.lower()}  '
@@ -177,12 +185,13 @@ class Reply(Post):
                 Thread.objects.filter(pk=self.thread.pk).update(reply_count=models.F('reply_count') - 1)
 
     def save(self, *args, **kwargs) -> None:
-        pk = self.pk
-        markdown_content = markdown.markdown(text=self.raw_content, extensions=['extra'])
-        allowed_tags = ['p', 'b', 'i', 'strong', 'em', 'ul', 'ol', 'li', 'code', 'pre']
-        self.markdown_content = bleach.clean(text=markdown_content, tags=allowed_tags)
         with transaction.atomic():
+            pk = self.pk
+            markdown_content = markdown.markdown(text=self.raw_content, extensions=['extra'])
+            allowed_tags = ['p', 'b', 'i', 'strong', 'em', 'ul', 'ol', 'li', 'code', 'pre']
+            self.markdown_content = bleach.clean(text=markdown_content, tags=allowed_tags)
             super().save(*args, **kwargs)
+        with transaction.atomic():
             if pk is None:
                 Thread.objects.filter(pk=self.thread.pk).update(reply_count=models.F('reply_count') + 1)
                 subject = f'Your thread has gotten replies!'
@@ -214,6 +223,14 @@ class Report(models.Model):
     reason = models.TextField(verbose_name='reason')
     status = models.CharField(verbose_name='status', choices=StatusChoices.choices, max_length=8, default=StatusChoices.PENDING)
     created_at = models.DateTimeField(verbose_name='created_at', auto_now_add=True)
+
+    def update_status(self):
+        with transaction.atomic():
+            if self.status == self.StatusChoices.PENDING:
+                self.status = self.StatusChoices.RESOLVED
+            else:
+                self.status = self.StatusChoices.PENDING
+            self.save(update_fields=['status'])
 
     def __str__(self) -> str:
         return f'Report By: {self.reporter}\nReport On: {self.thread if self.thread else self.reply}\nReason: {self.reason}\nStatus: {self.status}'
