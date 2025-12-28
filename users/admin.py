@@ -9,6 +9,6 @@ class CustomUserAdmin(UserAdmin):
     fieldsets = UserAdmin.fieldsets + (
         ('Metadata', {'fields': ('full_name', 'avatar')}),
     ) # type: ignore
-    add_fieldsets = UserAdmin.add_fieldsets(
+    add_fieldsets = UserAdmin.add_fieldsets + (
         ('Metadata', {'fields': ('full_name', 'avatar')}),
     )

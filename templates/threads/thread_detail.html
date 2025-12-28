@@ -14,27 +14,29 @@
     
     <div class="d-flex justify-content-between align-items-start mb-4 border-bottom pb-3">
         <div class="d-flex align-items-center gap-3">
-            <img src="https://ui-avatars.com/api/?name={{ thread.author }}&background=000&color=fff" class="rounded-circle" width="48">
+            {% if thread.author.avatar %}
+                <img src="{{ thread.author.avatar }}" class="rounded-circle object-fit-cover" width="48" height="48" alt="{{ thread.author.username }}">
+            {% else %}
+                <img src="https://ui-avatars.com/api/?name={{ thread.author.username }}&background=000&color=fff" class="rounded-circle" width="48" height="48" alt="{{ thread.author.username }}">
+            {% endif %}
+            
             <div class="lh-1">
-                <div class="fw-bold text-dark">{{ thread.author }}</div>
-                <div class="text-muted small mt-1">{{ thread.created_at|date:"F d, Y" }}</div>
+                <div class="fw-bold text-dark">{{ thread.author.full_name|default:thread.author.username }}</div>
+                <div class="text-muted small mt-1">@{{ thread.author.username }} &bull; {{ thread.created_at|date:"F d, Y" }}</div>
             </div>
         </div>
 
         <div class="d-flex gap-2 align-items-center">
-            
             {% if request.user == thread.author %}
                 <a href="{% url 'threads:thread_edit' pk=thread.pk %}" class="btn btn-white border shadow-sm btn-sm fw-bold text-dark rounded-pill px-3" title="Edit Thread">
                     <i class="bi bi-pencil-square me-1"></i> Edit
                 </a>
-
                 <form action="{% url 'threads:delete' pk=thread.pk type='thread' %}" method="post" class="d-inline">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-white border shadow-sm btn-sm fw-bold text-danger rounded-pill px-3" onclick="return confirm('Delete this discussion? This cannot be undone.')" title="Delete Thread">
                         <i class="bi bi-trash"></i>
                     </button>
                 </form>
-
             {% else %}
                 <a href="{% url 'threads:report_create' pk=thread.pk type='thread' %}" class="btn btn-white border shadow-sm btn-sm fw-bold text-muted rounded-pill px-3">
                     <i class="bi bi-flag me-1"></i> Report
@@ -79,11 +81,11 @@
     <div class="btn-group shadow-sm">
         <a href="{% url 'threads:thread_detail' pk=thread.pk order_by='-created_at' %}" 
            class="btn btn-sm btn-white border {% if view.kwargs.order_by == '-created_at' %}active fw-bold text-dark{% else %}text-muted{% endif %}">
-           Newest
+           Latest
         </a>
         <a href="{% url 'threads:thread_detail' pk=thread.pk order_by='-upvote_count' %}" 
            class="btn btn-sm btn-white border {% if view.kwargs.order_by == '-upvote_count' %}active fw-bold text-dark{% else %}text-muted{% endif %}">
-           Top Rated
+           Popular
         </a>
     </div>
 </div>
@@ -92,12 +94,17 @@
     {% for reply in replies %}
     <div class="widget-box p-4 mb-0" id="reply-{{ reply.pk }}">
         <div class="d-flex gap-3">
-            <img src="https://ui-avatars.com/api/?name={{ reply.author }}&background=random&size=36" class="rounded-circle" width="36" height="36">
+            {% if reply.author.avatar %}
+                <img src="{{ reply.author.avatar }}" class="rounded-circle object-fit-cover" width="36" height="36" alt="{{ reply.author.username }}">
+            {% else %}
+                <img src="https://ui-avatars.com/api/?name={{ reply.author.username }}&background=random&size=36" class="rounded-circle" width="36" height="36" alt="{{ reply.author.username }}">
+            {% endif %}
             
             <div class="flex-grow-1">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <div class="d-flex align-items-center gap-2">
-                        <span class="fw-bold text-dark">{{ reply.author }}</span>
+                        <span class="fw-bold text-dark">{{ reply.author.full_name|default:reply.author.username }}</span>
+                        <span class="text-muted small fw-normal">@{{ reply.author.username }}</span>
                         <span class="text-muted small">&bull; {{ reply.created_at|timesince }} ago</span>
                     </div>
 
@@ -163,19 +170,11 @@
 <div class="widget-box p-4 bg-white">
     <form method="post">
         {% csrf_token %}
-        
         {% if form.errors %}
             <div class="mb-3">
             {% for field, errors in form.errors.items %}
                 {% for error in errors %}
-                    {% if "fast" in error or "limit" in error %}
-                        <div class="alert alert-warning border-0 d-flex align-items-center gap-2">
-                            <i class="bi bi-hourglass-split"></i>
-                            <div><strong>Whoa, slow down!</strong> {{ error }}</div>
-                        </div>
-                    {% else %}
-                        <div class="alert alert-danger border-0 py-2 px-3 small">{{ error }}</div>
-                    {% endif %}
+                    <div class="alert alert-danger border-0 py-2 px-3 small">{{ error }}</div>
                 {% endfor %}
             {% endfor %}
             </div>

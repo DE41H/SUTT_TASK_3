@@ -11,12 +11,19 @@
     <div class="widget-box p-4 mb-0 position-relative">
         <div class="d-flex gap-3">
             <div class="d-none d-sm-block pt-1">
-                <img src="https://ui-avatars.com/api/?name={{ thread.author }}&background=f3f4f6&color=000&size=48" class="rounded-circle" width="48">
+                {% if thread.author.avatar %}
+                    <img src="{{ thread.author.avatar }}" class="rounded-circle object-fit-cover border" width="48" height="48" alt="{{ thread.author.username }}">
+                {% else %}
+                    <img src="https://ui-avatars.com/api/?name={{ thread.author.username }}&background=f3f4f6&color=000&size=48" class="rounded-circle border" width="48" height="48" alt="{{ thread.author.username }}">
+                {% endif %}
             </div>
             
             <div class="flex-grow-1 min-w-0">
                 <div class="d-flex justify-content-between align-items-center mb-1">
-                    <span class="fw-bold text-dark small">{{ thread.author }}</span>
+                    <div>
+                        <span class="fw-bold text-dark small">{{ thread.author.full_name|default:thread.author.username }}</span>
+                        <span class="text-secondary small fw-normal">@{{ thread.author.username }}</span>
+                    </div>
                     <span class="text-muted small">{{ thread.created_at|timesince }} ago</span>
                 </div>
 
@@ -86,11 +93,11 @@
     <div class="d-flex flex-column gap-1">
         <a href="{% url 'threads:thread_list' slug=category.slug order_by='-created_at' %}" 
            class="nav-item {% if view.kwargs.order_by == '-created_at' %}active{% endif %}">
-            <i class="bi bi-clock opacity-50"></i> Newest First
+            <i class="bi bi-clock opacity-50"></i> Latest
         </a>
         <a href="{% url 'threads:thread_list' slug=category.slug order_by='-upvote_count' %}" 
            class="nav-item {% if view.kwargs.order_by == '-upvote_count' %}active{% endif %}">
-            <i class="bi bi-graph-up-arrow opacity-50"></i> Top Rated
+            <i class="bi bi-fire opacity-50"></i> Popular
         </a>
     </div>
 </div>
