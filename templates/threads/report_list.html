@@ -1,126 +1,57 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-end mb-4">
+<div class="d-flex justify-content-between align-items-center mb-5 pt-2">
     <div>
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb mb-1 small fw-bold text-muted">
-                <li class="breadcrumb-item"><a href="{% url 'threads:category_list' %}" class="text-decoration-none text-muted">Categories</a></li>
-                <li class="breadcrumb-item active">{{ category.name }}</li>
-            </ol>
-        </nav>
-        <h1 class="fw-bold text-dark mb-0">{{ category.name }}</h1>
-    </div>
-    <a href="{% url 'threads:thread_create' pk=category.pk %}" class="btn btn-dark px-4 shadow-sm">
-        <i class="bi bi-plus-lg me-2"></i>New Thread
-    </a>
-</div>
-
-<div class="card mb-4 p-2 d-flex flex-row align-items-center gap-2 border-0">
-    <div class="position-relative flex-grow-1">
-        <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
-        <form method="get">
-            <input type="text" name="q" class="form-control border-0 bg-light ps-5" placeholder="Search discussions..." value="{{ query|default:'' }}">
-        </form>
-    </div>
-    <div class="vr mx-2 opacity-25"></div>
-    <div class="btn-group">
-        <a href="{% url 'threads:thread_list' slug=category.slug order_by='-created_at' %}{% if query %}?q={{ query }}{% endif %}" 
-           class="btn btn-sm px-3 rounded-pill {% if view.kwargs.order_by == '-created_at' %}btn-light fw-bold{% else %}text-muted{% endif %}">
-           Newest
-        </a>
-        
-        <a href="{% url 'threads:thread_list' slug=category.slug order_by='-upvote_count' %}{% if query %}?q={{ query }}{% endif %}" 
-           class="btn btn-sm px-3 rounded-pill {% if view.kwargs.order_by == '-upvote_count' %}btn-light fw-bold{% else %}text-muted{% endif %}">
-           Top Rated
-        </a>
+        <h1 class="fw-bold h3 text-dark mb-1">Moderation Queue</h1>
+        <p class="text-secondary mb-0">Review pending reports.</p>
     </div>
 </div>
 
 <div class="d-flex flex-column gap-3">
-    {% for thread in threads %}
-    <div class="card card-hover bg-white position-relative overflow-hidden border-0 shadow-sm">
-        <div class="card-body d-flex gap-4 p-4">
-            
-            <div class="d-none d-md-block flex-shrink-0 text-center" style="width: 50px;">
-                <img src="https://ui-avatars.com/api/?name={{ thread.author }}&background=random&size=50" class="rounded-circle mb-2" alt="">
+    {% for report in reports %}
+    <div class="widget-box p-0 overflow-hidden">
+        <div class="bg-light p-3 border-bottom d-flex justify-content-between align-items-center">
+            <span class="small text-muted">
+                <i class="bi bi-flag-fill text-danger me-2"></i>
+                <strong>{{ report.reporter }}</strong> reported 
+                {% if report.thread %}a Thread{% else %}a Reply{% endif %}
+            </span>
+            <span class="badge bg-white text-dark border shadow-sm">{{ report.status }}</span>
+        </div>
+
+        <div class="p-4">
+            <div class="mb-3">
+                <label class="sidebar-label text-danger mb-1">Reason</label>
+                <div class="text-dark fw-medium">{{ report.reason }}</div>
             </div>
 
-            <div class="flex-grow-1 min-w-0">
-                <div class="d-flex align-items-center gap-2 mb-1 text-muted small">
-                    <span class="fw-bold text-dark">{{ thread.author }}</span>
-                    <span>&bull;</span>
-                    <span>{{ thread.created_at|timesince }} ago</span>
+            <div class="p-3 bg-light rounded-3 mb-4 border border-start-0 border-end-0">
+                <div class="text-muted fst-italic">
+                    "{{ report.thread.content|default:report.reply.content|striptags|truncatechars:200 }}"
                 </div>
-                
-                <h5 class="fw-bold mb-2 text-truncate">
-                    <a href="{% url 'threads:thread_detail' pk=thread.pk order_by='-created_at' %}" class="text-decoration-none text-dark stretched-link">
-                        {% if thread.is_locked %}<i class="bi bi-lock-fill text-warning me-1"></i>{% endif %}
-                        {{ thread.title }}
-                    </a>
-                </h5>
-                
-                <p class="text-muted text-truncate mb-3" style="max-width: 90%;">
-                    {{ thread.raw_content|truncatechars:150 }}
-                </p>
+            </div>
 
-                <div class="d-flex align-items-center gap-3">
-                    <div class="badge rounded-pill bg-light text-dark border px-3 py-2 fw-normal position-relative z-2">
-                         <form action="{% url 'threads:upvote' pk=thread.pk type='thread' %}?next={{ request.get_full_path }}" method="post" class="d-inline">
-                            {% csrf_token %}
-                            <button type="submit" class="btn p-0 border-0 lh-1 me-1">
-                                <i class="bi bi-caret-up-fill {% if request.user in thread.upvotes.all %}text-primary{% else %}text-muted{% endif %}"></i>
-                            </button>
-                        </form>
-                        {{ thread.upvote_count }}
-                    </div>
-
-                    <span class="text-muted small">
-                        <i class="bi bi-chat me-1"></i> {{ thread.reply_count }} Replies
-                    </span>
-
-                    <div class="ms-auto d-flex gap-1 position-relative z-2">
-                        {% for tag in thread.tags.all %}
-                            <span class="badge rounded-pill border tag-badge fw-medium text-dark bg-white" data-color="{{ tag.color }}">
-                                {{ tag.name }}
-                            </span>
-                        {% endfor %}
-                    </div>
-                </div>
+            <div class="d-flex gap-2">
+                {% if report.thread %}
+                <form action="{% url 'threads:delete' pk=report.thread.pk type='thread' %}" method="post" class="flex-grow-1">
+                    {% csrf_token %}
+                    <button class="btn btn-danger w-100 fw-bold" onclick="return confirm('Delete Thread?')"><i class="bi bi-trash me-1"></i> Delete Content</button>
+                </form>
+                {% elif report.reply %}
+                <form action="{% url 'threads:delete' pk=report.reply.pk type='reply' %}" method="post" class="flex-grow-1">
+                    {% csrf_token %}
+                    <button class="btn btn-danger w-100 fw-bold" onclick="return confirm('Delete Reply?')"><i class="bi bi-trash me-1"></i> Delete Content</button>
+                </form>
+                {% endif %}
             </div>
         </div>
     </div>
     {% empty %}
     <div class="text-center py-5">
-        <i class="bi bi-cup-hot display-4 text-muted opacity-25"></i>
-        <p class="mt-3 text-muted">No threads yet.</p>
+        <h3 class="fw-bold text-dark">All Clear</h3>
+        <p class="text-muted">No pending reports.</p>
     </div>
     {% endfor %}
 </div>
-
-{% if is_paginated %}
-<div class="mt-5 d-flex justify-content-center">
-    <nav>
-        <ul class="pagination">
-            {% if page_obj.has_previous %}
-                <li class="page-item">
-                    <a class="page-link border-0 rounded-circle mx-1" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">
-                        <i class="bi bi-chevron-left"></i>
-                    </a>
-                </li>
-            {% endif %}
-            
-            <li class="page-item disabled"><span class="page-link border-0 bg-transparent fw-bold text-dark">Page {{ page_obj.number }}</span></li>
-            
-            {% if page_obj.has_next %}
-                <li class="page-item">
-                    <a class="page-link border-0 rounded-circle mx-1" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}">
-                        <i class="bi bi-chevron-right"></i>
-                    </a>
-                </li>
-            {% endif %}
-        </ul>
-    </nav>
-</div>
-{% endif %}
 {% endblock %}

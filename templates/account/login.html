@@ -1,38 +1,35 @@
 {% extends "base.html" %}
-{% load i18n %}
-{% load account socialaccount %}
+{% load socialaccount %}
 
-{% block title %}Sign In - Threads{% endblock %}
+{% block title %}Sign In{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center align-items-center" style="min-height: 70vh;">
-    <div class="col-md-8 col-lg-5">
-        <div class="card border-0 shadow-lg p-4 p-md-5 text-center">
-            
-            <div class="mb-4">
-                <div class="bg-light d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 80px; height: 80px;">
-                    <i class="bi bi-google text-dark fs-1"></i>
-                </div>
-            </div>
+<div class="d-flex justify-content-center align-items-center" style="min-height: 70vh;">
+    <div class="widget-box p-5 text-center" style="max-width: 420px; width: 100%;">
+        
+        <div class="mb-4 text-dark"><i class="bi bi-shield-lock display-4"></i></div>
+        <h2 class="fw-bold mb-2">Welcome Back</h2>
+        <p class="text-muted mb-4">Sign in to continue to Threads.</p>
 
-            <h2 class="fw-bold mb-2">Welcome Back</h2>
-            <p class="text-muted mb-4">Sign in to join the conversation</p>
+        {% if form.errors %}
+        <div class="alert alert-danger border-0 rounded-3 text-start small mb-4">
+            {% for error in form.non_field_errors %}
+                <div><i class="bi bi-exclamation-circle me-2"></i>{{ error }}</div>
+            {% endfor %}
+            {% for field in form %}
+                {% for error in field.errors %}
+                    <div><i class="bi bi-exclamation-circle me-2"></i>{{ field.label }}: {{ error }}</div>
+                {% endfor %}
+            {% endfor %}
+        </div>
+        {% endif %}
 
-            <div class="d-grid mb-4">
-                <a href="{% provider_login_url 'google' %}" class="btn btn-outline-dark btn-lg py-3 d-flex align-items-center justify-content-center gap-3 border-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 48 48">
-                        <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
-                        <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
-                        <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.221,0-9.652-3.342-11.303-8l-6.571,4.827C9.655,39.663,16.318,44,24,44z"/>
-                        <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
-                    </svg>
-                    <span class="fw-bold">Continue with Google</span>
-                </a>
-            </div>
+        <a href="{% provider_login_url 'google' %}" class="btn btn-white border w-100 py-2 fw-bold d-flex align-items-center justify-content-center gap-2 mb-3 shadow-sm" style="border-radius: var(--radius-md);">
+            <i class="bi bi-google"></i> Continue with Google
+        </a>
 
-            <p class="small text-muted">
-                By signing in, you agree to our Terms of Service and Privacy Policy.
-            </p>
+        <div class="text-muted small mt-4">
+            By continuing, you agree to our <a href="#" class="text-dark fw-bold">Terms</a> and <a href="#" class="text-dark fw-bold">Privacy Policy</a>.
         </div>
     </div>
 </div>

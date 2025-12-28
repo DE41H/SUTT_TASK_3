@@ -1,41 +1,93 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-lg-8">
-        <div class="mb-4">
-            <a href="{% url 'threads:category_list' %}" class="btn btn-sm btn-light rounded-pill mb-2"><i class="bi bi-arrow-left"></i> Cancel</a>
-            <h2 class="fw-bold">Create Thread in <span class="text-primary">{{ category.name }}</span></h2>
-        </div>
+<div class="mb-4">
+    <a href="{% url 'threads:thread_list' slug=category.slug order_by='-created_at' %}" class="btn btn-white border shadow-sm px-3 py-1 text-muted fw-bold small rounded-pill">
+        <i class="bi bi-arrow-left me-1"></i> Cancel
+    </a>
+</div>
 
-        <div class="card shadow-sm border-0">
-            <div class="card-body p-4">
-                <form method="post">
-                    {% csrf_token %}
-                    
-                    <div class="mb-4">
-                        <label for="{{ form.title.id_for_label }}" class="form-label fw-bold text-muted small text-uppercase">Title</label>
-                        {{ form.title }}
-                        {% if form.title.errors %}
-                            <div class="text-danger small mt-1">{{ form.title.errors }}</div>
+<div class="widget-box p-5 border-0 shadow-sm">
+    <div class="mb-4 pb-4 border-bottom">
+        <h1 class="fw-bold h3 text-dark mb-1">Start a Discussion</h1>
+        <p class="text-secondary mb-0">Share your thoughts in <strong>{{ category.name }}</strong>.</p>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+
+        {% if form.errors %}
+            <div class="mb-4">
+                {% for field, errors in form.errors.items %}
+                    {% for error in errors %}
+                        {% if "fast" in error or "limit" in error %}
+                        <div class="alert alert-warning border-0 shadow-sm d-flex align-items-center gap-3 rounded-3 p-3">
+                            <i class="bi bi-hourglass-split fs-3 text-warning"></i>
+                            <div>
+                                <h6 class="fw-bold mb-0 text-dark">You're doing that too fast!</h6>
+                                <p class="mb-0 small text-muted">Please wait a moment before posting again.</p>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-danger border-0 rounded-3 py-2 px-3 small mb-2">
+                             <strong>{{ field|title }}:</strong> {{ error }}
+                        </div>
                         {% endif %}
-                    </div>
-
-                    <div class="mb-4">
-                        <label for="{{ form.raw_content.id_for_label }}" class="form-label fw-bold text-muted small text-uppercase">Content</label>
-                        {{ form.raw_content }}
-                        <div class="form-text text-end">Markdown supported</div>
-                        {% if form.raw_content.errors %}
-                            <div class="text-danger small mt-1">{{ form.raw_content.errors }}</div>
-                        {% endif %}
-                    </div>
-
-                    <div class="d-flex justify-content-end">
-                        <button type="submit" class="btn btn-dark px-5 py-2 fw-bold">Publish Thread</button>
-                    </div>
-                </form>
+                    {% endfor %}
+                {% endfor %}
             </div>
+        {% endif %}
+
+        <div class="mb-4">
+            <label class="sidebar-label text-dark mb-2">Title</label>
+            {{ form.title }}
         </div>
+
+        <div class="mb-4">
+            <label class="sidebar-label text-dark mb-2">Content</label>
+            {{ form.raw_content }}
+            <div class="form-text text-end mt-2">Markdown supported</div>
+        </div>
+        
+        {% if form.tags %}
+        <div class="mb-5">
+            <label class="sidebar-label text-dark mb-2">Tags</label>
+            {{ form.tags }}
+        </div>
+        {% endif %}
+
+        <div class="d-flex justify-content-end gap-3">
+            <button type="submit" class="btn btn-dark fw-bold px-5 py-2">Post Discussion</button>
+        </div>
+    </form>
+</div>
+
+<style>
+    input[type="text"], textarea, select {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-sharp);
+        background: #FAFAFA;
+    }
+    textarea { min-height: 200px; }
+    input:focus, textarea:focus, select:focus {
+        background: #fff;
+        outline: 2px solid #000;
+        border-color: transparent;
+    }
+</style>
+{% endblock %}
+
+{% block right_sidebar %}
+<div class="mb-4">
+    <label class="sidebar-label">Guidelines</label>
+    <div class="widget-box p-4">
+        <ul class="list-unstyled mb-0 text-muted small d-flex flex-column gap-3">
+            <li><strong>1. Be Respectful</strong><br>Keep conversations civil.</li>
+            <li><strong>2. Stay on Topic</strong><br>Ensure it fits {{ category.name }}.</li>
+            <li><strong>3. No Spam</strong><br>Self-promotion is not allowed.</li>
+        </ul>
     </div>
 </div>
 {% endblock %}

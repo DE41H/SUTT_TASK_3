@@ -1,39 +1,29 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="py-4">
-    <h2 class="fw-bold mb-4">Explore Topics</h2>
-    
-    <div class="row g-4">
-        {% for category in categories %}
-        <div class="col-md-6 col-xl-4">
-            <a href="{% url 'threads:thread_list' slug=category.slug order_by='-created_at' %}" class="text-decoration-none">
-                <div class="card h-100 border hover-lift transition-all p-4">
-                    <div class="d-flex align-items-center gap-3 mb-3">
-                        <div class="bg-light p-3 rounded-3 text-dark">
-                            <i class="bi bi-hash fs-4"></i>
-                        </div>
-                        <div>
-                            <h5 class="fw-bold text-dark mb-0">{{ category.name }}</h5>
-                            <small class="text-muted">{{ category.threads.count }} discussions</small>
-                        </div>
-                    </div>
-                    <div class="d-flex justify-content-end">
-                        <span class="text-primary small fw-bold">View <i class="bi bi-arrow-right"></i></span>
-                    </div>
+<div class="text-center mb-5 pt-2">
+    <h1 class="fw-bold display-6 mb-2 text-dark">Explore Topics</h1>
+    <p class="text-secondary">Select a category to join the conversation.</p>
+</div>
+
+<div class="row g-4">
+    {% for category in categories %}
+    <div class="col-md-6">
+        <a href="{% url 'threads:thread_list' slug=category.slug order_by='-created_at' %}" class="text-decoration-none">
+            <div class="widget-box h-100 p-4 text-center transition-lift border-0">
+                <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 50px; height: 50px;">
+                    <span class="fs-4 fw-bold text-dark">{{ category.name|slice:":1" }}</span>
                 </div>
-            </a>
-        </div>
-        {% empty %}
-        <div class="col-12 text-center text-muted py-5">
-            No categories available yet.
-        </div>
-        {% endfor %}
+                <h5 class="fw-bold text-dark mb-1">{{ category.name }}</h5>
+                <p class="text-muted small mb-0">{{ category.threads.count }} active threads</p>
+            </div>
+        </a>
     </div>
+    {% endfor %}
 </div>
 
 <style>
-    .hover-lift { transition: transform 0.2s, box-shadow 0.2s; }
-    .hover-lift:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
+    .transition-lift { transition: transform 0.2s; }
+    .transition-lift:hover { transform: translateY(-3px); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
 </style>
 {% endblock %}
