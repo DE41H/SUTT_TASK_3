@@ -23,8 +23,7 @@
             <div class="fw-bold mb-1"><i class="bi bi-exclamation-triangle-fill me-2"></i>Please fix the errors below:</div>
             <ul class="mb-0 small ps-4">
                 {% for field in form %}
-                    {% for error in field.errors %}<li>{{ field.label }}: {{ error }}</li>{% endfor %}
-                {% endfor %}
+                    {% for error in field.errors %}<li>{{ field.label }}: {{ error }}</li>{% endfor %}\n                {% endfor %}
             </ul>
         </div>
         {% endif %}
@@ -37,40 +36,42 @@
         <div class="mb-4">
             <label class="sidebar-label text-dark mb-2" for="{{ form.raw_content.id_for_label }}">Content</label>
             {{ form.raw_content }}
-            <div class="form-text mt-2 text-end text-muted small">Markdown is supported</div>
+        </div>
+        
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <label class="sidebar-label text-dark mb-2">Related Courses</label>
+                {{ form.tagged_courses }}
+            </div>
+            <div class="col-md-6">
+                <label class="sidebar-label text-dark mb-2">Related Documents</label>
+                {{ form.tagged_documents }}
+            </div>
         </div>
 
         <div class="mb-5">
-            <label class="sidebar-label text-dark mb-2" for="{{ form.tags.id_for_label }}">Topics</label>
+            <label class="sidebar-label text-dark mb-2" for="{{ form.tags.id_for_label }}">Tags</label>
             {{ form.tags }}
-            <div class="form-text text-muted small">Remove items by clicking the 'x'. Type to search.</div>
         </div>
 
         <div class="d-flex justify-content-end gap-3">
-            <button type="submit" class="btn btn-dark fw-bold px-5 py-2" style="border-radius: var(--radius-sharp);">Save Changes</button>
+            <button type="submit" class="btn btn-dark fw-bold px-5 py-2">Save Changes</button>
         </div>
     </form>
 </div>
 
 <style>
-    /* Force style the default Django widgets since we aren't using a custom form class here */
-    #id_title, #id_raw_content {
-        display: block;
+    /* ... (Same styles as provided previously) ... */
+    input[type="text"], textarea, select {
         width: 100%;
         padding: 0.75rem 1rem;
-        font-size: 1rem;
-        font-weight: 400;
-        line-height: 1.5;
-        color: #212529;
-        background-color: #FAFAFA;
-        background-clip: padding-box;
         border: 1px solid var(--border-color);
         border-radius: var(--radius-sharp);
-        transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+        background: #FAFAFA;
     }
-    #id_raw_content { min-height: 250px; }
+    textarea { min-height: 250px; }
     
-    #id_title:focus, #id_raw_content:focus {
+    input:focus, textarea:focus, select:focus {
         background-color: #fff;
         border-color: #000;
         outline: 0;
@@ -90,18 +91,26 @@
                 create: false, 
             });
         }
+        
+        // Courses
+        if(document.getElementById('id_tagged_courses')) {
+            new TomSelect("#id_tagged_courses", {
+                plugins: ['remove_button'],
+                maxItems: 5,
+                placeholder: "Search courses...",
+                create: false, 
+            });
+        }
+        
+        // Documents
+        if(document.getElementById('id_tagged_documents')) {
+            new TomSelect("#id_tagged_documents", {
+                plugins: ['remove_button'],
+                maxItems: 5,
+                placeholder: "Search documents...",
+                create: false, 
+            });
+        }
     });
 </script>
-{% endblock %}
-
-{% block right_sidebar %}
-<div class="mb-4">
-    <label class="sidebar-label">Tips</label>
-    <div class="widget-box p-4 bg-white">
-        <p class="text-muted small mb-0">
-            Updating the title or tags will help more people find your discussion. 
-            Ensure your content stays relevant to the category.
-        </p>
-    </div>
-</div>
 {% endblock %}

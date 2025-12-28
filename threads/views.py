@@ -82,7 +82,7 @@ class ThreadCreateView(LoginRequiredMixin, generic.CreateView):
 
 class ThreadEditView(LoginRequiredMixin, UserPassesTestMixin, generic.UpdateView):
     model = Thread
-    fields = ['title', 'raw_content', 'tags']
+    fields = ['title', 'raw_content', 'tags', 'tagged_courses', 'tagged_documents']
     template_name = 'threads/thread_edit.html'
     context_object_name = 'thread'
 

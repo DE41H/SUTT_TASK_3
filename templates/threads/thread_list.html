@@ -33,7 +33,7 @@
                 
                 <p class="text-secondary mb-3 text-truncate">{{ thread.raw_content|truncatechars:140 }}</p>
 
-                <div class="d-flex align-items-center gap-3 position-relative z-2">
+                <div class="d-flex align-items-center gap-3 position-relative z-2 flex-wrap">
                     <form action="{% url 'threads:upvote' pk=thread.pk type='thread' %}?next={{ request.get_full_path }}" method="post">
                         {% csrf_token %}
                         <button class="btn btn-sm border px-3 py-1 fw-bold d-flex align-items-center gap-2 {% if request.user in thread.upvotes.all %}btn-dark{% else %}btn-white text-muted{% endif %}" style="border-radius: 20px;">
@@ -44,10 +44,23 @@
                     <div class="text-muted small">
                         <i class="bi bi-chat-fill opacity-50 me-1"></i> {{ thread.reply_count }}
                     </div>
+                    
+                    {% for course in thread.tagged_courses.all %}
+                    <span class="badge bg-light text-dark border fw-normal">
+                        <i class="bi bi-journal-bookmark text-secondary me-1"></i>{{ course.code }}
+                    </span>
+                    {% endfor %}
 
+                    {% for doc in thread.tagged_documents.all %}
+                    <span class="badge bg-light text-dark border fw-normal">
+                        <i class="bi bi-file-earmark-text text-secondary me-1"></i>{{ doc.title|truncatechars:20 }}
+                    </span>
+                    {% endfor %}
                     <div class="ms-auto d-flex gap-1">
                         {% for tag in thread.tags.all %}
-                        <span class="badge tag-badge border fw-medium rounded-pill px-2" data-color="{{ tag.color }}">{{ tag.name }}</span>
+                        <span class="badge tag-badge border fw-medium rounded-pill px-2" data-color="{{ tag.color }}">
+                            {{ tag.name }}
+                        </span>
                         {% endfor %}
                     </div>
                 </div>
@@ -93,11 +106,11 @@
     <div class="d-flex flex-column gap-1">
         <a href="{% url 'threads:thread_list' slug=category.slug order_by='-created_at' %}" 
            class="nav-item {% if view.kwargs.order_by == '-created_at' %}active{% endif %}">
-            <i class="bi bi-clock opacity-50"></i> Latest
+            <i class="bi bi-clock opacity-50"></i> Newest First
         </a>
         <a href="{% url 'threads:thread_list' slug=category.slug order_by='-upvote_count' %}" 
            class="nav-item {% if view.kwargs.order_by == '-upvote_count' %}active{% endif %}">
-            <i class="bi bi-fire opacity-50"></i> Popular
+            <i class="bi bi-graph-up-arrow opacity-50"></i> Top Rated
         </a>
     </div>
 </div>

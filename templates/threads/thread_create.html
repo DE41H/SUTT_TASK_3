@@ -20,19 +20,7 @@
             <div class="mb-4">
                 {% for field, errors in form.errors.items %}
                     {% for error in errors %}
-                        {% if "fast" in error or "limit" in error %}
-                        <div class="alert alert-warning border-0 shadow-sm d-flex align-items-center gap-3 rounded-3 p-3">
-                            <i class="bi bi-hourglass-split fs-3 text-warning"></i>
-                            <div>
-                                <h6 class="fw-bold mb-0 text-dark">You're doing that too fast!</h6>
-                                <p class="mb-0 small text-muted">Please wait a moment before posting again.</p>
-                            </div>
-                        </div>
-                        {% else %}
-                        <div class="alert alert-danger border-0 rounded-3 py-2 px-3 small mb-2">
-                             <strong>{{ field|title }}:</strong> {{ error }}
-                        </div>
-                        {% endif %}
+                        <div class="alert alert-danger border-0 py-2 px-3 small">{{ field.label }}: {{ error }}</div>
                     {% endfor %}
                 {% endfor %}
             </div>
@@ -49,6 +37,17 @@
             <div class="form-text text-end mt-2">Markdown supported</div>
         </div>
         
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <label class="sidebar-label text-dark mb-2">Related Courses</label>
+                {{ form.tagged_courses }}
+            </div>
+            <div class="col-md-6">
+                <label class="sidebar-label text-dark mb-2">Related Documents</label>
+                {{ form.tagged_documents }}
+            </div>
+        </div>
+
         {% if form.tags %}
         <div class="mb-5">
             <label class="sidebar-label text-dark mb-2">Tags</label>
@@ -77,6 +76,46 @@
         border-color: transparent;
     }
 </style>
+
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        if(document.getElementById('id_tags')) {
+            new TomSelect("#id_tags", {
+                plugins: ['remove_button'],
+                maxItems: 5,
+                placeholder: "Select or search topics...",
+                create: true, // Tags can be created
+                render: {
+                    option_create: function(data, escape) {
+                        return '<div class="create">Add <strong>' + escape(data.input) + '</strong>...</div>';
+                    }
+                }
+            });
+        }
+        
+        // Configuration for Courses (No creation allowed)
+        if(document.getElementById('id_tagged_courses')) {
+            new TomSelect("#id_tagged_courses", {
+                plugins: ['remove_button'],
+                maxItems: 5,
+                placeholder: "Search for courses...",
+                create: false 
+            });
+        }
+        
+        // Configuration for Documents (No creation allowed)
+        if(document.getElementById('id_tagged_documents')) {
+            new TomSelect("#id_tagged_documents", {
+                plugins: ['remove_button'],
+                maxItems: 5,
+                placeholder: "Search for documents...",
+                create: false 
+            });
+        }
+    });
+</script>
 {% endblock %}
 
 {% block right_sidebar %}
@@ -84,9 +123,9 @@
     <label class="sidebar-label">Guidelines</label>
     <div class="widget-box p-4">
         <ul class="list-unstyled mb-0 text-muted small d-flex flex-column gap-3">
-            <li><strong>1. Be Respectful</strong><br>Keep conversations civil.</li>
-            <li><strong>2. Stay on Topic</strong><br>Ensure it fits {{ category.name }}.</li>
-            <li><strong>3. No Spam</strong><br>Self-promotion is not allowed.</li>
+            <li><strong>1. Be Respectful</strong><br>Treat others with kindness.</li>
+            <li><strong>2. Stay on Topic</strong><br>Keep discussion relevant.</li>
+            <li><strong>3. No Spam</strong><br>Avoid excessive self-promotion.</li>
         </ul>
     </div>
 </div>

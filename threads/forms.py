@@ -27,7 +27,7 @@ class ThreadCreateForm(forms.ModelForm):
 
     class Meta:
         model = Thread
-        fields = ['title', 'raw_content']
+        fields = ['title', 'raw_content', 'tags', 'tagged_courses', 'tagged_documents']
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control'}),
             'raw_content': forms.Textarea(attrs={
