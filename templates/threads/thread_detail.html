@@ -1,4 +1,7 @@
 {% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ thread.title }}{% endblock %}
 
 {% block content %}
 <div class="mb-4">
@@ -7,49 +10,139 @@
     </a>
 </div>
 
-<div class="widget-box p-5 mb-5 border-0 shadow-sm">
-    <h1 class="fw-bold mb-4 text-dark h3">{{ thread.title }}</h1>
+<div class="widget-box p-5 mb-5 border-0 shadow-sm position-relative">
     
-    <div class="d-flex align-items-center gap-3 mb-4 pb-4 border-bottom">
-        <img src="https://ui-avatars.com/api/?name={{ thread.author }}&background=000&color=fff" class="rounded-circle" width="40">
-        <div>
-            <div class="fw-bold text-dark">{{ thread.author }}</div>
-            <div class="text-muted small">{{ thread.created_at|date:"F d, Y" }}</div>
+    <div class="d-flex justify-content-between align-items-start mb-4 border-bottom pb-3">
+        <div class="d-flex align-items-center gap-3">
+            <img src="https://ui-avatars.com/api/?name={{ thread.author }}&background=000&color=fff" class="rounded-circle" width="48">
+            <div class="lh-1">
+                <div class="fw-bold text-dark">{{ thread.author }}</div>
+                <div class="text-muted small mt-1">{{ thread.created_at|date:"F d, Y" }}</div>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2 align-items-center">
+            
+            {% if request.user == thread.author %}
+                <a href="{% url 'threads:thread_edit' pk=thread.pk %}" class="btn btn-white border shadow-sm btn-sm fw-bold text-dark rounded-pill px-3" title="Edit Thread">
+                    <i class="bi bi-pencil-square me-1"></i> Edit
+                </a>
+
+                <form action="{% url 'threads:delete' pk=thread.pk type='thread' %}" method="post" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-white border shadow-sm btn-sm fw-bold text-danger rounded-pill px-3" onclick="return confirm('Delete this discussion? This cannot be undone.')" title="Delete Thread">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </form>
+
+            {% else %}
+                <a href="{% url 'threads:report_create' pk=thread.pk type='thread' %}" class="btn btn-white border shadow-sm btn-sm fw-bold text-muted rounded-pill px-3">
+                    <i class="bi bi-flag me-1"></i> Report
+                </a>
+            {% endif %}
+
+            {% if request.user.is_staff %}
+                <div class="vr mx-1"></div>
+                <form action="{% url 'threads:lock' pk=thread.pk %}?next={{ request.get_full_path }}" method="post" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-dark btn-sm fw-bold rounded-pill px-3" title="Toggle Lock">
+                        {% if thread.is_locked %}
+                            <i class="bi bi-unlock-fill me-1"></i> Unlock
+                        {% else %}
+                            <i class="bi bi-lock-fill me-1"></i> Lock
+                        {% endif %}
+                    </button>
+                </form>
+            {% endif %}
         </div>
     </div>
 
-    <div class="fs-5 lh-lg text-dark mb-5">
+    <h1 class="fw-bold mb-4 h2 text-dark">{{ thread.title }}</h1>
+    
+    <div class="fs-5 lh-lg text-dark mb-5 content-body">
         {{ thread.content|safe }}
     </div>
 
-    <form action="{% url 'threads:upvote' pk=thread.pk type='thread' %}?next={{ request.get_full_path }}" method="post">
-        {% csrf_token %}
-        <button class="btn rounded-pill border px-4 py-2 fw-bold {% if request.user in thread.upvotes.all %}btn-dark{% else %}btn-white text-muted{% endif %}">
-            <i class="bi bi-caret-up-fill"></i> {{ thread.upvote_count }} Upvotes
-        </button>
-    </form>
+    <div class="d-flex gap-2">
+        <form action="{% url 'threads:upvote' pk=thread.pk type='thread' %}?next={{ request.get_full_path }}" method="post">
+            {% csrf_token %}
+            <button class="btn rounded-pill border px-4 py-2 fw-bold {% if request.user in thread.upvotes.all %}btn-dark{% else %}btn-white text-muted{% endif %}">
+                <i class="bi bi-caret-up-fill"></i> {{ thread.upvote_count }} Upvotes
+            </button>
+        </form>
+    </div>
 </div>
 
 <div class="d-flex justify-content-between align-items-end mb-4 px-1">
     <h5 class="fw-bold m-0 text-dark">Discussion ({{ replies.count }})</h5>
+    
     <div class="btn-group shadow-sm">
         <a href="{% url 'threads:thread_detail' pk=thread.pk order_by='-created_at' %}" 
-           class="btn btn-sm btn-white border {% if view.kwargs.order_by == '-created_at' %}active fw-bold text-dark{% else %}text-muted{% endif %}">Newest</a>
+           class="btn btn-sm btn-white border {% if view.kwargs.order_by == '-created_at' %}active fw-bold text-dark{% else %}text-muted{% endif %}">
+           Newest
+        </a>
         <a href="{% url 'threads:thread_detail' pk=thread.pk order_by='-upvote_count' %}" 
-           class="btn btn-sm btn-white border {% if view.kwargs.order_by == '-upvote_count' %}active fw-bold text-dark{% else %}text-muted{% endif %}">Top Rated</a>
+           class="btn btn-sm btn-white border {% if view.kwargs.order_by == '-upvote_count' %}active fw-bold text-dark{% else %}text-muted{% endif %}">
+           Top Rated
+        </a>
     </div>
 </div>
 
 <div class="d-flex flex-column gap-3 mb-5">
     {% for reply in replies %}
-    <div class="widget-box p-4 mb-0">
+    <div class="widget-box p-4 mb-0" id="reply-{{ reply.pk }}">
         <div class="d-flex gap-3">
-            <img src="https://ui-avatars.com/api/?name={{ reply.author }}&background=random&size=32" class="rounded-circle" width="32" height="32">
+            <img src="https://ui-avatars.com/api/?name={{ reply.author }}&background=random&size=36" class="rounded-circle" width="36" height="36">
+            
             <div class="flex-grow-1">
-                <div class="d-flex justify-content-between mb-2">
-                    <span class="fw-bold text-dark">{{ reply.author }}</span>
-                    <span class="text-muted small">{{ reply.created_at|timesince }} ago</span>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="fw-bold text-dark">{{ reply.author }}</span>
+                        <span class="text-muted small">&bull; {{ reply.created_at|timesince }} ago</span>
+                    </div>
+
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-light border-0 text-muted rounded-circle p-1 lh-1" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-three-dots-vertical"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3 p-1">
+                            {% if request.user == reply.author %}
+                                <li>
+                                    <a class="dropdown-item small rounded-2 py-2" href="{% url 'threads:reply_edit' pk=reply.pk %}">
+                                        <i class="bi bi-pencil me-2"></i> Edit Reply
+                                    </a>
+                                </li>
+                                <li>
+                                    <form action="{% url 'threads:delete' pk=reply.pk type='reply' %}" method="post">
+                                        {% csrf_token %}
+                                        <button class="dropdown-item small rounded-2 py-2 text-danger" onclick="return confirm('Delete this reply?')">
+                                            <i class="bi bi-trash me-2"></i> Delete
+                                        </button>
+                                    </form>
+                                </li>
+                            {% else %}
+                                <li>
+                                    <a class="dropdown-item small rounded-2 py-2" href="{% url 'threads:report_create' pk=reply.pk type='reply' %}">
+                                        <i class="bi bi-flag me-2"></i> Report
+                                    </a>
+                                </li>
+                            {% endif %}
+                            
+                            {% if request.user.is_staff and request.user != reply.author %}
+                                <li><hr class="dropdown-divider my-1"></li>
+                                <li>
+                                    <form action="{% url 'threads:delete' pk=reply.pk type='reply' %}" method="post">
+                                        {% csrf_token %}
+                                        <button class="dropdown-item small rounded-2 py-2 text-danger" onclick="return confirm('Admin Delete: Are you sure?')">
+                                            <i class="bi bi-shield-x me-2"></i> Remove
+                                        </button>
+                                    </form>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </div>
                 </div>
+
                 <div class="text-secondary mb-3">{{ reply.content|safe }}</div>
                 
                 <div class="d-flex align-items-center gap-3">
@@ -59,14 +152,6 @@
                             <i class="bi bi-heart{% if request.user in reply.upvotes.all %}-fill{% endif %}"></i> {{ reply.upvote_count }}
                         </button>
                     </form>
-                    
-                    <a href="{% url 'threads:report_create' pk=reply.pk type='reply' %}" class="text-muted small text-decoration-none ms-auto">Report</a>
-
-                    {% if user.is_staff or user == reply.author %}
-                        <form action="{% url 'threads:delete' pk=reply.pk type='reply' %}" method="post">{% csrf_token %}
-                            <button class="btn btn-link p-0 text-danger small opacity-75 text-decoration-none" onclick="return confirm('Delete?')">Delete</button>
-                        </form>
-                    {% endif %}
                 </div>
             </div>
         </div>
@@ -75,7 +160,7 @@
 </div>
 
 {% if not thread.is_locked %}
-<div class="widget-box p-4">
+<div class="widget-box p-4 bg-white">
     <form method="post">
         {% csrf_token %}
         
@@ -98,14 +183,20 @@
 
         <div class="mb-3">
             <label class="sidebar-label mb-2">Write a reply</label>
-            {{ form.raw_content }} 
+            {{ form.raw_content }}
         </div>
         <div class="d-flex justify-content-end">
-            <button class="btn btn-dark fw-bold px-4 py-2">Post Reply</button>
+            <button class="btn btn-dark fw-bold px-4 py-2" style="border-radius: var(--radius-sharp);">Post Reply</button>
         </div>
     </form>
 </div>
+{% else %}
+<div class="alert alert-secondary border-0 text-center py-4 rounded-3">
+    <i class="bi bi-lock-fill fs-4 d-block mb-2"></i>
+    <span class="fw-bold">This thread has been locked by moderators.</span>
+</div>
 {% endif %}
+
 {% endblock %}
 
 {% block right_sidebar %}
@@ -114,34 +205,23 @@
     <div class="d-flex flex-wrap gap-2">
         {% for tag in thread.tags.all %}
         <span class="badge tag-badge border fw-medium rounded-pill px-2" data-color="{{ tag.color }}">{{ tag.name }}</span>
+        {% empty %}
+        <span class="text-muted small">No tags.</span>
         {% endfor %}
     </div>
 </div>
 
 <div class="mb-5">
-    <label class="sidebar-label">Manage</label>
-    <div class="widget-box p-0 overflow-hidden">
-        <a href="{% url 'threads:report_create' pk=thread.pk type='thread' %}" class="d-block p-3 text-decoration-none text-muted border-bottom hover-bg-light">
-            <i class="bi bi-flag me-2"></i> Report Thread
-        </a>
-        
-        {% if user.is_staff and not thread.is_locked %}
-        <form action="{% url 'threads:lock' pk=thread.pk %}" method="post">
-            {% csrf_token %}
-            <button class="w-100 text-start border-0 bg-white p-3 text-warning border-bottom">
-                <i class="bi bi-lock-fill me-2"></i> Lock Thread
-            </button>
-        </form>
-        {% endif %}
-
-        {% if user.is_staff or user == thread.author %}
-        <form action="{% url 'threads:delete' pk=thread.pk type='thread' %}" method="post">
-             {% csrf_token %}
-             <button class="w-100 text-start border-0 bg-white p-3 text-danger" onclick="return confirm('Confirm?')">
-                <i class="bi bi-trash me-2"></i> Delete Thread
-            </button>
-        </form>
-        {% endif %}
+    <label class="sidebar-label">About</label>
+    <div class="widget-box p-3">
+        <div class="d-flex justify-content-between mb-2">
+            <span class="text-muted small">Replies</span>
+            <span class="fw-bold small">{{ replies.count }}</span>
+        </div>
+        <div class="d-flex justify-content-between">
+            <span class="text-muted small">Views</span>
+            <span class="fw-bold small">{{ thread.views|default:"0" }}</span>
+        </div>
     </div>
 </div>
 {% endblock %}
