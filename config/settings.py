@@ -26,7 +26,7 @@ SECRET_KEY = env('DJANGO_SECRET_KEY', cast=str)
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env('DJANGO_DEBUG', cast=bool)
 
-ALLOWED_HOSTS = [i.strip() for i in env('DJANGO_ALLOWED_HOSTS', cast=str).split(' ')] # type: ignore
+ALLOWED_HOSTS = [i.strip() for i in env('DJANGO_ALLOWED_HOSTS', cast=str).split(' ') if i] # type: ignore
 
 AUTH_USER_MODEL = 'users.User'
 ACCOUNT_LOGIN_METHODS = {'email'}
@@ -49,6 +49,15 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = env('EMAIL_USER')
 EMAIL_HOST_PASSWORD = env('EMAIL_PASSWORD')
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
 
 # Application definition
 
@@ -134,7 +143,9 @@ DATABASES = {
         'USER': env('POSTGRES_USER'),
         'PASSWORD': env('POSTGRES_PASSWORD'),
         'HOST': 'db',
-        'PORT': '5432'
+        'PORT': '5432',
+        'CONN_MAX_AGE': 600,
+        'CONN_HEALTH_CHECKS': True
     }
 }
 
