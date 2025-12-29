@@ -78,10 +78,10 @@
 {% if is_paginated %}
 <div class="d-flex justify-content-center mt-5 gap-2">
     {% if page_obj.has_previous %}
-    <a href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}" class="btn btn-white border shadow-sm"><i class="bi bi-arrow-left"></i></a>
+    <a href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if request.GET.f %}&f={{ request.GET.f }}{% endif %}" class="btn btn-white border shadow-sm"><i class="bi bi-arrow-left"></i></a>
     {% endif %}
     {% if page_obj.has_next %}
-    <a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}" class="btn btn-white border shadow-sm"><i class="bi bi-arrow-right"></i></a>
+    <a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if request.GET.f %}&f={{ request.GET.f }}{% endif %}" class="btn btn-white border shadow-sm"><i class="bi bi-arrow-right"></i></a>
     {% endif %}
 </div>
 {% endif %}
@@ -95,9 +95,61 @@
 </div>
 
 <div class="mb-4">
+    <label class="sidebar-label">Filter by Tags</label>
+    <div class="dropdown">
+        <button class="btn btn-white w-100 text-start border shadow-sm d-flex justify-content-between align-items-center" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <span class="text-truncate">
+                {% if selected %}
+                    {{ selected|length }} tag{{ selected|length|pluralize }} selected
+                {% else %}
+                    Select tags...
+                {% endif %}
+            </span>
+            <i class="bi bi-chevron-down small opacity-50"></i>
+        </button>
+        <ul class="dropdown-menu w-100 shadow border-0 p-1" style="max-height: 400px; overflow-y: auto;">
+            <li><h6 class="dropdown-header">Available Tags</h6></li>
+            {% for tag in tags %}
+            <li>
+                <a class="dropdown-item rounded d-flex align-items-center justify-content-between py-2 tag-filter-item" 
+                   href="#" 
+                   data-tag-name="{{ tag.name }}"
+                   onclick="togglePendingTag(event, this);">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge rounded-pill border dropdown-tag-icon" data-color="{{ tag.color }}">#</span>
+                        <span>{{ tag.name }}</span>
+                    </div>
+                    <i class="bi bi-check-lg text-primary tag-check-icon {% if tag not in selected %}d-none{% endif %}"></i>
+                </a>
+            </li>
+            {% endfor %}
+            
+            <li><hr class="dropdown-divider"></li>
+            
+            <li class="p-2">
+                <button class="btn btn-dark w-100 btn-sm fw-bold" onclick="applyFilters()">
+                    Apply Filters
+                </button>
+            </li>
+
+            {% if selected %}
+            <li>
+                <a class="dropdown-item text-danger small fw-bold text-center mt-1" href="?q={{ query|default:'' }}">
+                    Clear Filters
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </div>
+</div>
+
+<div class="mb-4">
     <label class="sidebar-label">Search</label>
     <form method="get">
         <input type="text" name="q" class="form-control" placeholder="Search topics..." value="{{ request.GET.q|default:'' }}">
+        {% if request.GET.f %}
+            <input type="hidden" name="f" value="{{ request.GET.f }}">
+        {% endif %}
     </form>
 </div>
 
@@ -114,4 +166,67 @@
         </a>
     </div>
 </div>
+
+<script>
+    // Toggles the visual state of the tag without reloading the page
+    function togglePendingTag(event, element) {
+        event.preventDefault();
+        event.stopPropagation(); // Prevents the dropdown from closing
+        
+        const checkIcon = element.querySelector('.tag-check-icon');
+        if (checkIcon) {
+            checkIcon.classList.toggle('d-none');
+        }
+    }
+
+    // Gathers all selected tags and reloads the page
+    function applyFilters() {
+        const selectedElements = document.querySelectorAll('.tag-filter-item .tag-check-icon:not(.d-none)');
+        const selectedTags = [];
+
+        selectedElements.forEach(icon => {
+            const parentLink = icon.closest('.tag-filter-item');
+            if (parentLink) {
+                selectedTags.push(parentLink.getAttribute('data-tag-name'));
+            }
+        });
+
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        if (selectedTags.length > 0) {
+            urlParams.set('f', selectedTags.join(','));
+        } else {
+            urlParams.delete('f');
+        }
+        
+        // Reset page to 1 when filters change
+        urlParams.delete('page');
+        window.location.search = urlParams.toString();
+    }
+
+    // Handles the color styling for tags
+    document.addEventListener("DOMContentLoaded", function() {
+        const tagIcons = document.querySelectorAll('.dropdown-tag-icon');
+        tagIcons.forEach(icon => {
+            const color = icon.getAttribute('data-color');
+            if(color) {
+                icon.style.backgroundColor = color + '20'; 
+                icon.style.color = color;
+                icon.style.borderColor = color + '40';
+            }
+        });
+        
+        // Similarly apply colors to main feed tags if needed, 
+        // though your template used a different class 'tag-badge' there.
+        const feedTags = document.querySelectorAll('.tag-badge');
+        feedTags.forEach(tag => {
+             const color = tag.getAttribute('data-color');
+             if(color) {
+                 tag.style.backgroundColor = color + '20'; 
+                 tag.style.color = color;
+                 tag.style.borderColor = color + '40';
+             }
+        });
+    });
+</script>
 {% endblock %}

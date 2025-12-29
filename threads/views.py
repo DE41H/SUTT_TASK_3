@@ -1,4 +1,5 @@
 from typing import Any
+from django.db.models import Count
 from django.db.models.base import Model as Model
 from django.db.models.query import QuerySet
 from django.forms import BaseModelForm
@@ -29,17 +30,29 @@ class ThreadListView(generic.ListView):
 
     def get_queryset(self) -> QuerySet[Any]:
         if self.query is None or self.query == '':
-            return Thread.objects.filter(category=self.category, is_deleted=False).order_by(self.order_by)
-        return fuzzy_search(self.query).filter(category=self.category, is_deleted=False).order_by(self.order_by)
+            if self.filters:
+                return Thread.objects.filter(category=self.category, is_deleted=False, tags__in=self.selected_tags).order_by(self.order_by).distinct()
+            return Thread.objects.filter(category=self.category, is_deleted=False).order_by(self.order_by).distinct()
+        if self.filters:
+            return fuzzy_search(self.query).filter(category=self.category, is_deleted=False, tags__in=self.selected_tags).order_by(self.order_by).distinct()
+        return fuzzy_search(self.query).filter(category=self.category, is_deleted=False).order_by(self.order_by).distinct()
     
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         context['category'] = self.category
         context['query'] = self.query
+        context['selected'] = self.selected_tags
+        context['tags'] = Tag.objects.annotate(threads=Count('tagged')).filter(threads__gte=1).order_by('-threads')
         return context
     
     def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         self.query = self.request.GET.get('q')
+        self.filters = self.request.GET.get('f')
+        if self.filters:
+            selected = [i for i in self.filters.split(',') if i]
+            self.selected_tags = tuple(Tag.objects.filter(name__in=selected))
+        else:
+            self.selected_tags = tuple()
         self.category: Category = get_object_or_404(Category, slug=self.kwargs['slug'])
         self.order_by = kwargs.get('order_by')
         if self.order_by not in ('-created_at', '-upvote_count'):
