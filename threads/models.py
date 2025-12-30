@@ -87,22 +87,26 @@ class Post(models.Model):
             self.is_deleted = True
             self.save(update_fields=['is_deleted'])
 
+    def _get_mentioned(self):
+        User = get_user_model()
+        excluded = ',!?;:()[]{}\"\'/\\<>*&^%$#='
+        mentions = [i.rstrip(excluded) for i in self.raw_content.split(' ') if i.startswith('@')]
+        mentioned_users = User.objects.filter(username__in=mentions).exclude(pk=self.author.pk)
+        return mentioned_users
+        
     def save(self, *args, **kwargs) -> None:
         is_new = self.pk is None
         super().save(*args, **kwargs)
         if is_new:
-            User = get_user_model()
-            mentions = [i for i in self.raw_content.split(' ') if i.startswith('@')]
-            mentioned_users = User.objects.filter(username__in=mentions).exclude(pk=self.author.pk)
-            subject = f'You have been mentioned in a {self.__class__.__name__}'
             if isinstance(self, Thread):
                 pk = self.pk
             else:
                 pk = self.thread.pk # type: ignore
+            subject = f'You have been mentioned in a {self.__class__.__name__}'
             link = f'https://{Site.objects.get_current()}{reverse_lazy('threads:thread_detail', kwargs={'pk': pk, 'order_by': '-created_at'})}'
             body=f'Mentioned By: {self.author}\nMentioned At: {self.created_at}\nClick this link to view: {link}'
             messages = []
-            for user in mentioned_users:
+            for user in self._get_mentioned():
                 message = (
                     subject,
                     body,
@@ -138,6 +142,20 @@ class Thread(Post):
     tags = models.ManyToManyField(verbose_name='tags', to='threads.Tag', blank=True, related_name='tagged')
     is_locked = models.BooleanField(verbose_name='is locked', default=False)
     reply_count = models.PositiveIntegerField(verbose_name='reply_count', default=0)
+
+    @classmethod
+    def fuzzy_search(cls, prompt: str):
+        prompt = f'  {prompt.lower()}  '
+        prompt_values = [prompt[i:i+3] for i in range(len(prompt) - 2)]
+        return cls.objects.filter(
+            trigrams__value__in=prompt_values
+        ).annotate(
+            score=models.Count('trigrams')
+        ).filter(
+            score__gte=2
+        ).order_by(
+            '-score'
+        )
 
     def update_lock(self):
         with transaction.atomic():
