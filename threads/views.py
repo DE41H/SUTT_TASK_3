@@ -192,7 +192,7 @@ class ThreadDetailView(LoginRequiredMixin, FormMixin, generic.DetailView):
     @cached_property
     def order_by(self):
         order_by = self.kwargs.get('order_by')
-        if self.order_by not in ('-created_at', '-upvote_count'):
+        if order_by not in ('-created_at', '-upvote_count'):
             raise Http404('Invalid ordering parameter!')
         return order_by
 
