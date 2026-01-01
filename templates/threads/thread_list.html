@@ -3,7 +3,7 @@
 {% block content %}
 <div class="content-box mb-4">
     <h1 class="fw-bold display-6 mb-1 text-dark">{{ category.name }}</h1>
-    <p class="text-secondary mb-0">{{ category.threads.count }} discussions active</p>
+    <p class="text-secondary mb-0">{{ category.threads.count }} discussion{{ category.threads.count|pluralize }}</p>
 </div>
 
 <div class="d-flex flex-column gap-3">
@@ -20,21 +20,19 @@
             
             <div class="flex-grow-1 min-w-0">
                 <div class="meta-row mb-2">
-                    <div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
                         <span class="fw-bold text-dark small">{{ thread.author.full_name|default:thread.author.username }}</span>
                         <span class="text-secondary small fw-normal">@{{ thread.author.username }}</span>
+                        <span class="text-muted small ms-auto">{{ thread.created_at|timesince }} ago</span>
                     </div>
-                    <span class="text-muted small ms-auto">{{ thread.created_at|timesince }} ago</span>
                 </div>
 
-                <!-- FIXED: Removed stretched-link, made title a proper link -->
                 <a href="{% url 'threads:thread_detail' pk=thread.pk order_by=view.kwargs.order_by %}" class="text-decoration-none text-dark">
-                    <h5 class="thread-title fw-bold mb-2">{{ thread.title }}</h5>
+                    <h5 class="thread-title fw-bold mb-2 hover-underline">{{ thread.title }}</h5>
                 </a>
                 
-                <p class="text-secondary mb-3">{{ thread.raw_content|truncatechars:140 }}</p>
+                <p class="text-secondary mb-3 small">{{ thread.raw_content|truncatechars:140 }}</p>
 
-                <!-- FIXED: Removed position-relative z-2 that was conflicting -->
                 <div class="d-flex align-items-center gap-3 flex-wrap">
                     <form action="{% url 'threads:upvote' pk=thread.pk type='thread' %}?next={{ request.get_full_path|urlencode }}" method="post" class="d-inline">
                         {% csrf_token %}
@@ -43,26 +41,25 @@
                         </button>
                     </form>
 
-                    <!-- FIXED: Using replies.count instead of reply_count for real-time accuracy -->
                     <a href="{% url 'threads:thread_detail' pk=thread.pk order_by=view.kwargs.order_by %}" class="text-decoration-none text-muted small d-flex align-items-center gap-1">
                         <i class="bi bi-chat-fill opacity-50"></i> {{ thread.replies.count }}
                     </a>
                     
                     {% for course in thread.tagged_courses.all %}
-                    <span class="badge bg-light text-dark border fw-normal">
+                    <span class="badge bg-light text-dark border fw-normal small">
                         <i class="bi bi-journal-bookmark text-secondary me-1"></i>{{ course.code }}
                     </span>
                     {% endfor %}
 
                     {% for doc in thread.tagged_documents.all %}
-                    <span class="badge bg-light text-dark border fw-normal">
+                    <span class="badge bg-light text-dark border fw-normal small">
                         <i class="bi bi-file-earmark-text text-secondary me-1"></i>{{ doc.title|truncatechars:20 }}
                     </span>
                     {% endfor %}
                     
                     <div class="ms-auto d-flex gap-1 flex-wrap">
                         {% for tag in thread.tags.all %}
-                        <span class="badge tag-badge border fw-medium rounded-pill px-2" data-color="{{ tag.color }}">
+                        <span class="badge tag-badge border fw-medium rounded-pill px-2 small" data-color="{{ tag.color }}">
                             {{ tag.name }}
                         </span>
                         {% endfor %}
@@ -73,21 +70,76 @@
     </div>
     {% empty %}
     <div class="content-box text-center py-5 opacity-50">
-        <i class="bi bi-inbox fs-1"></i>
-        <p class="mt-2 mb-0">No threads yet.</p>
+        <i class="bi bi-inbox fs-1 mb-3 d-block"></i>
+        <p class="fw-bold mb-1">No threads yet</p>
+        <p class="text-muted small mb-0">Be the first to start a discussion!</p>
     </div>
     {% endfor %}
 </div>
 
 {% if is_paginated %}
-<div class="d-flex justify-content-center mt-5 gap-2">
-    {% if page_obj.has_previous %}
-    <a href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if request.GET.f %}&f={{ request.GET.f }}{% endif %}" class="btn btn-white border shadow-sm"><i class="bi bi-arrow-left"></i></a>
+<nav aria-label="Pagination Navigation" class="mt-5">
+    <div class="d-flex justify-content-center align-items-center gap-3 flex-wrap">
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if request.GET.f %}&f={{ request.GET.f }}{% endif %}" 
+           class="btn btn-white border shadow-sm px-4 py-2 d-flex align-items-center gap-2 fw-bold pagination-btn"
+           aria-label="Go to previous page"
+           style="min-width: 120px;">
+            <i class="bi bi-arrow-left-circle-fill fs-5"></i> <span class="pagination-text">Previous</span>
+        </a>
+        {% else %}
+        <button class="btn btn-light border px-4 py-2 d-flex align-items-center gap-2 fw-bold pagination-btn" 
+                disabled 
+                aria-label="Previous page unavailable"
+                style="min-width: 120px; opacity: 0.5;">
+            <i class="bi bi-arrow-left-circle fs-5"></i> <span class="pagination-text">Previous</span>
+        </button>
+        {% endif %}
+        
+        <div class="px-4 py-2 bg-white border rounded shadow-sm fw-bold text-dark pagination-counter" style="min-width: 150px; text-align: center;">
+            <span class="text-primary">{{ page_obj.number }}</span> 
+            <span class="text-muted">of</span> 
+            <span class="text-dark">{{ page_obj.paginator.num_pages }}</span>
+        </div>
+        
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if request.GET.f %}&f={{ request.GET.f }}{% endif %}" 
+           class="btn btn-white border shadow-sm px-4 py-2 d-flex align-items-center gap-2 fw-bold pagination-btn"
+           aria-label="Go to next page"
+           style="min-width: 120px;">
+            <span class="pagination-text">Next</span> <i class="bi bi-arrow-right-circle-fill fs-5"></i>
+        </a>
+        {% else %}
+        <button class="btn btn-light border px-4 py-2 d-flex align-items-center gap-2 fw-bold pagination-btn" 
+                disabled 
+                aria-label="Next page unavailable"
+                style="min-width: 120px; opacity: 0.5;">
+            <span class="pagination-text">Next</span> <i class="bi bi-arrow-right-circle fs-5"></i>
+        </button>
+        {% endif %}
+    </div>
+    
+    <!-- Quick jump buttons for first/last page -->
+    {% if page_obj.paginator.num_pages > 3 %}
+    <div class="d-flex justify-content-center align-items-center gap-2 mt-3">
+        {% if page_obj.number > 2 %}
+        <a href="?page=1{% if query %}&q={{ query }}{% endif %}{% if request.GET.f %}&f={{ request.GET.f }}{% endif %}" 
+           class="btn btn-sm btn-light border text-muted"
+           aria-label="Go to first page">
+            <i class="bi bi-chevron-double-left"></i> First
+        </a>
+        {% endif %}
+        
+        {% if page_obj.number < page_obj.paginator.num_pages|add:"-1" %}
+        <a href="?page={{ page_obj.paginator.num_pages }}{% if query %}&q={{ query }}{% endif %}{% if request.GET.f %}&f={{ request.GET.f }}{% endif %}" 
+           class="btn btn-sm btn-light border text-muted"
+           aria-label="Go to last page">
+            Last <i class="bi bi-chevron-double-right"></i>
+        </a>
+        {% endif %}
+    </div>
     {% endif %}
-    {% if page_obj.has_next %}
-    <a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if request.GET.f %}&f={{ request.GET.f }}{% endif %}" class="btn btn-white border shadow-sm"><i class="bi bi-arrow-right"></i></a>
-    {% endif %}
-</div>
+</nav>
 {% endif %}
 {% endblock %}
 
@@ -101,7 +153,7 @@
 <div class="mb-4">
     <label class="sidebar-label">Filter by Tags</label>
     <div class="dropdown">
-        <button class="btn btn-white w-100 text-start border shadow-sm d-flex justify-content-between align-items-center" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+        <button class="btn btn-white w-100 text-start border shadow-sm d-flex justify-content-between align-items-center py-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
             <span class="text-truncate">
                 {% if selected %}
                     {{ selected|length }} tag{{ selected|length|pluralize }} selected
@@ -111,46 +163,55 @@
             </span>
             <i class="bi bi-chevron-down small opacity-50"></i>
         </button>
-        <ul class="dropdown-menu w-100 shadow border-0 p-1" style="max-height: 400px; overflow-y: auto;">
-            <li><h6 class="dropdown-header">Available Tags</h6></li>
+        <ul class="dropdown-menu w-100 shadow border-0 rounded-3 p-2" style="max-height: 400px; overflow-y: auto;">
+            <li><h6 class="dropdown-header px-2 py-1 small fw-bold text-uppercase text-muted">Available Tags</h6></li>
             {% for tag in tags %}
             <li>
-                <a class="dropdown-item rounded d-flex align-items-center justify-content-between py-2 tag-filter-item" 
+                <a class="dropdown-item rounded-2 d-flex align-items-center justify-content-between py-2 tag-filter-item" 
                    href="#" 
                    data-tag-name="{{ tag.name }}"
                    onclick="togglePendingTag(event, this);">
                     <div class="d-flex align-items-center gap-2">
-                        <span class="badge rounded-pill border dropdown-tag-icon" data-color="{{ tag.color }}">#</span>
-                        <span>{{ tag.name }}</span>
+                        <span class="badge rounded-pill border dropdown-tag-icon" data-color="{{ tag.color }}" style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">#</span>
+                        <span class="small">{{ tag.name }}</span>
                     </div>
-                    <i class="bi bi-check-lg text-primary tag-check-icon {% if tag not in selected %}d-none{% endif %}"></i>
+                    <i class="bi bi-check-lg text-primary tag-check-icon {% if tag.name not in selected %}d-none{% endif %}"></i>
                 </a>
             </li>
+            {% empty %}
+            <li class="px-3 py-2 text-muted small">No tags available</li>
             {% endfor %}
             
-            <li><hr class="dropdown-divider"></li>
+            {% if tags %}
+            <li><hr class="dropdown-divider my-2"></li>
             
             <li class="p-2">
-                <button class="btn btn-dark w-100 btn-sm fw-bold" onclick="applyFilters()">
-                    Apply Filters
+                <button class="btn btn-dark w-100 btn-sm fw-bold shadow-sm" onclick="applyFilters()">
+                    <i class="bi bi-funnel me-2"></i>Apply Filters
                 </button>
             </li>
 
             {% if selected %}
-            <li>
-                <a class="dropdown-item text-danger small fw-bold text-center mt-1" href="?q={{ query|default:'' }}">
-                    Clear Filters
+            <li class="p-2 pt-0">
+                <a class="btn btn-light w-100 btn-sm border text-danger fw-bold" href="?q={{ query|default:'' }}">
+                    <i class="bi bi-x-circle me-2"></i>Clear Filters
                 </a>
             </li>
+            {% endif %}
             {% endif %}
         </ul>
     </div>
 </div>
 
 <div class="mb-4">
-    <label class="sidebar-label">Search</label>
+    <label class="sidebar-label">Search Discussions</label>
     <form method="get" action="">
-        <input type="text" name="q" class="form-control" placeholder="Search topics..." value="{{ request.GET.q|default:'' }}">
+        <div class="input-group">
+            <input type="text" name="q" class="form-control" placeholder="Search topics..." value="{{ request.GET.q|default:'' }}">
+            <button type="submit" class="btn btn-white border">
+                <i class="bi bi-search"></i>
+            </button>
+        </div>
         {% if request.GET.f %}
             <input type="hidden" name="f" value="{{ request.GET.f }}">
         {% endif %}
@@ -158,24 +219,118 @@
 </div>
 
 <div class="mb-4">
-    <label class="sidebar-label">Sort Feed</label>
+    <label class="sidebar-label">Sort Discussions</label>
     <div class="d-flex flex-column gap-1">
         <a href="{% url 'threads:thread_list' slug=category.slug order_by='-created_at' %}{% if request.GET.q %}?q={{ request.GET.q }}{% endif %}{% if request.GET.f %}{% if request.GET.q %}&{% else %}?{% endif %}f={{ request.GET.f }}{% endif %}" 
            class="nav-item {% if view.kwargs.order_by == '-created_at' %}active{% endif %}">
-            <i class="bi bi-clock opacity-50"></i> Newest First
+            <i class="bi bi-clock"></i> Newest First
         </a>
         <a href="{% url 'threads:thread_list' slug=category.slug order_by='-upvote_count' %}{% if request.GET.q %}?q={{ request.GET.q }}{% endif %}{% if request.GET.f %}{% if request.GET.q %}&{% else %}?{% endif %}f={{ request.GET.f }}{% endif %}" 
            class="nav-item {% if view.kwargs.order_by == '-upvote_count' %}active{% endif %}">
-            <i class="bi bi-graph-up-arrow opacity-50"></i> Top Rated
+            <i class="bi bi-graph-up-arrow"></i> Top Rated
         </a>
     </div>
 </div>
 
+<div class="widget-box">
+    <h6 class="sidebar-label mb-3">Category Info</h6>
+    <div class="d-flex justify-content-between mb-2">
+        <span class="text-muted small">Total Threads</span>
+        <span class="fw-bold small">{{ category.threads.count }}</span>
+    </div>
+    <div class="d-flex justify-content-between">
+        <span class="text-muted small">Active Tags</span>
+        <span class="fw-bold small">{{ tags.count }}</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .hover-underline:hover {
+        text-decoration: underline !important;
+    }
+    
+    /* Ensure dropdowns work properly */
+    .dropdown-menu {
+        z-index: 1050;
+    }
+    
+    /* Improve tag filter item hover */
+    .tag-filter-item:hover {
+        background-color: #F9FAFB;
+    }
+    
+    /* Enhanced Pagination Styling */
+    nav[aria-label="Pagination Navigation"] .pagination-btn {
+        transition: all 0.2s ease;
+        font-size: 0.95rem;
+    }
+    
+    nav[aria-label="Pagination Navigation"] .pagination-btn:not(:disabled):hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+    }
+    
+    nav[aria-label="Pagination Navigation"] .pagination-btn:not(:disabled):hover i {
+        transform: scale(1.2);
+    }
+    
+    nav[aria-label="Pagination Navigation"] .pagination-btn i {
+        transition: transform 0.2s ease;
+    }
+    
+    nav[aria-label="Pagination Navigation"] .pagination-btn:active:not(:disabled) {
+        transform: translateY(0);
+    }
+    
+    /* Make disabled buttons more obvious */
+    nav[aria-label="Pagination Navigation"] .pagination-btn:disabled {
+        cursor: not-allowed;
+        background-color: #f3f4f6;
+    }
+    
+    /* Page counter styling */
+    .pagination-counter {
+        font-size: 1rem;
+        letter-spacing: 0.5px;
+    }
+    
+    /* Mobile responsive pagination */
+    @media (max-width: 576px) {
+        nav[aria-label="Pagination Navigation"] .pagination-btn {
+            min-width: 80px !important;
+            padding: 0.5rem 1rem !important;
+            font-size: 0.875rem;
+        }
+        
+        nav[aria-label="Pagination Navigation"] .pagination-text {
+            display: none;
+        }
+        
+        nav[aria-label="Pagination Navigation"] .pagination-btn i {
+            margin: 0 !important;
+        }
+        
+        .pagination-counter {
+            min-width: 100px !important;
+            font-size: 0.875rem;
+        }
+    }
+    
+    /* Smooth scroll to top after pagination */
+    html {
+        scroll-behavior: smooth;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
 <script>
     // Toggles the visual state of the tag without reloading the page
     function togglePendingTag(event, element) {
         event.preventDefault();
-        event.stopPropagation(); // Prevents the dropdown from closing
+        event.stopPropagation();
         
         const checkIcon = element.querySelector('.tag-check-icon');
         if (checkIcon) {
@@ -205,7 +360,9 @@
         
         // Reset page to 1 when filters change
         urlParams.delete('page');
-        window.location.search = urlParams.toString();
+        
+        const newUrl = urlParams.toString() ? '?' + urlParams.toString() : window.location.pathname;
+        window.location.href = newUrl;
     }
 
     // Handles the color styling for tags
@@ -228,6 +385,17 @@
                  tag.style.color = color;
                  tag.style.borderColor = color + '40';
              }
+        });
+        
+        // Scroll to top smoothly when pagination is clicked
+        const paginationLinks = document.querySelectorAll('nav[aria-label="Pagination Navigation"] a');
+        paginationLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                // Small delay to ensure smooth scroll
+                setTimeout(() => {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }, 100);
+            });
         });
     });
 </script>

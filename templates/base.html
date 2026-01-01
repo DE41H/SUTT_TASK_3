@@ -74,6 +74,7 @@
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
             min-height: 100vh;
+            height: 100%;
         }
 
         /* Focus visible for better accessibility */
@@ -87,28 +88,25 @@
             outline: none;
         }
 
-        /* CRITICAL FIX: Grid layout with align-items: start for sticky to work */
+        /* WORKING SOLUTION: Flexbox layout with proper overflow handling */
         .app-layout {
-            display: grid;
-            grid-template-columns: var(--sidebar-width) 1fr var(--sidebar-width);
-            align-items: start; /* CRITICAL: Prevents grid items from stretching */
+            display: flex;
             min-height: 100vh;
-            gap: 0;
+            position: relative;
         }
 
-        /* Handle empty right sidebar */
-        .app-layout:has(.sidebar-panel.right:empty) {
-            grid-template-columns: var(--sidebar-width) 1fr;
-        }
-
-        /* CRITICAL FIX: Sidebar sticky positioning */
+        /* CRITICAL: Sidebar with sticky positioning */
         .sidebar-panel {
             background-color: var(--bg-sidebar);
+            position: -webkit-sticky; /* Safari support */
             position: sticky;
             top: 0;
-            align-self: start; /* CRITICAL: Allows sticky to work */
+            align-self: flex-start; /* CRITICAL: Allows sticky to work in flexbox */
             height: 100vh;
-            max-height: 100vh; /* Prevent overflow issues */
+            max-height: 100vh;
+            width: var(--sidebar-width);
+            min-width: var(--sidebar-width);
+            flex-shrink: 0;
             overflow-y: auto;
             overflow-x: hidden;
             display: flex;
@@ -117,7 +115,6 @@
             border-right: 1px solid var(--border-color);
             scrollbar-width: thin;
             scrollbar-color: var(--border-color) transparent;
-            will-change: transform; /* Performance optimization */
         }
         
         .sidebar-panel::-webkit-scrollbar {
@@ -148,12 +145,14 @@
             display: none;
         }
 
+        /* Main scroll area - FIXED */
         .main-scroll {
             background-color: var(--bg-body);
             padding: 3rem 2rem;
             min-height: 100vh;
-            width: 100%;
-            contain: layout style paint; /* Performance optimization */
+            flex: 1 1 auto;
+            min-width: 0; /* Allow flex item to shrink below content size */
+            overflow-x: hidden;
         }
         
         .content-container {
@@ -172,7 +171,6 @@
             border: 1px solid var(--border-color);
             background-color: #ffffff;
             box-shadow: var(--shadow-sharp);
-            contain: layout paint; /* Performance */
         }
 
         .thread-card,
@@ -190,7 +188,6 @@
             box-shadow: var(--shadow-sharp);
             overflow-wrap: anywhere;
             transition: box-shadow 0.2s ease, transform 0.2s ease;
-            contain: layout paint;
         }
 
         .thread-card:hover,
@@ -534,11 +531,6 @@
             color: var(--text-primary);
         }
 
-        /* Performance: Reduce repaints */
-        img {
-            content-visibility: auto;
-        }
-
         /* Print styles */
         @media print {
             .sidebar-panel,
@@ -574,7 +566,6 @@
         @media (max-width: 1200px) {
             .app-layout { 
                 display: block !important;
-                grid-template-columns: 1fr;
             }
             
             .sidebar-panel { 
@@ -582,7 +573,8 @@
             } 
             
             .main-scroll { 
-                padding: 1rem; 
+                padding: 1rem;
+                width: 100%;
             }
         }
 
@@ -856,18 +848,12 @@
                         }
                     });
                 }, {
-                    rootMargin: '50px' // Load images 50px before they enter viewport
+                    rootMargin: '50px'
                 });
 
                 document.querySelectorAll('img[data-src]').forEach(img => {
                     imageObserver.observe(img);
                 });
-            }
-
-            // Service Worker registration for PWA (optional)
-            if ('serviceWorker' in navigator) {
-                // Uncomment to enable service worker
-                // navigator.serviceWorker.register('/sw.js').catch(() => {});
             }
 
             // Console easter egg
