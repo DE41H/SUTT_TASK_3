@@ -56,9 +56,12 @@ if not DEBUG:
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+    CSRF_TRUSTED_ORIGINS = ['https://' + host for host in ALLOWED_HOSTS]
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
+else:
+    CSRF_TRUSTED_ORIGINS = ['http://' + host for host in ALLOWED_HOSTS]
 
 # Application definition
 
