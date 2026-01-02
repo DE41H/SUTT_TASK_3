@@ -1,57 +1,123 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     
     <title>{% block title %}ForumDeck{% endblock %}</title>
     
+    <!-- Favicon with fallbacks -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💬</text></svg>">
+    <link rel="apple-touch-icon" sizes="180x180" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💬</text></svg>">
 
     <!-- SEO & Social Meta -->
     <meta name="description" content="{% block description %}Join the conversation on ForumDeck - A community for thoughtful discussions.{% endblock %}">
-    <meta name="theme-color" content="#ffffff">
+    <meta name="keywords" content="{% block keywords %}forum, discussion, community, BITS Pilani{% endblock %}">
+    <meta name="author" content="ForumDeck Team">
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#2563EB" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#1f2937" media="(prefers-color-scheme: dark)">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.build_absolute_uri }}">
     <meta property="og:title" content="{% block og_title %}ForumDeck{% endblock %}">
     <meta property="og:description" content="{% block og_description %}A community for thoughtful discussions.{% endblock %}">
-    <meta property="og:type" content="website">
     <meta property="og:site_name" content="ForumDeck">
-    <meta property="og:url" content="{{ request.build_absolute_uri }}">
+    <meta property="og:locale" content="en_US">
+    
+    <!-- Twitter Card -->
     <meta name="twitter:card" content="summary">
+    <meta name="twitter:url" content="{{ request.build_absolute_uri }}">
     <meta name="twitter:title" content="{% block twitter_title %}ForumDeck{% endblock %}">
     <meta name="twitter:description" content="{% block twitter_description %}A community for thoughtful discussions.{% endblock %}">
     
-    <!-- Preconnect for faster loading -->
+    <!-- PWA Support -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ForumDeck">
+    
+    <!-- Performance & Security -->
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="dns-prefetch" href="https://ui-avatars.com">
     
+    <!-- Preload critical resources -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" as="style">
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" as="style">
+    
+    <!-- Stylesheets -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            --font-main: 'Inter', sans-serif;
+            /* Colors */
+            --font-main: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             --bg-body: #F3F4F6;       
             --bg-sidebar: #FFFFFF;    
             --text-primary: #111827;
             --text-secondary: #6B7280;
             --border-color: #E5E7EB;
-            --sidebar-width: 280px;
-            --radius-sharp: 0.5rem;   
-            --shadow-sharp: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.06);
             --brand-color: #2563EB;
             --danger-color: #DC2626;
             --success-color: #059669;
             --warning-color: #D97706;
+            
+            /* Spacing */
+            --sidebar-width: 280px;
+            --header-height: 64px;
+            --radius-sharp: 0.5rem;
+            --shadow-sharp: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.06);
+            
+            /* Z-index layers */
+            --z-dropdown: 1000;
+            --z-sticky: 1020;
+            --z-fixed: 1030;
+            --z-modal-backdrop: 1040;
+            --z-modal: 1050;
+            --z-popover: 1060;
+            --z-tooltip: 1070;
         }
 
-        /* Global wrapping & box sizing */
+        /* Dark mode variables */
+        [data-theme="dark"] {
+            --bg-body: #111827;
+            --bg-sidebar: #1f2937;
+            --text-primary: #f9fafb;
+            --text-secondary: #9ca3af;
+            --border-color: #374151;
+        }
+
+        /* Auto dark mode */
+        @media (prefers-color-scheme: dark) {
+            [data-theme="auto"] {
+                --bg-body: #111827;
+                --bg-sidebar: #1f2937;
+                --text-primary: #f9fafb;
+                --text-secondary: #9ca3af;
+                --border-color: #374151;
+            }
+        }
+
+        /* Reset & Base Styles */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         html {
             scroll-behavior: smooth;
             height: 100%;
+            -webkit-text-size-adjust: 100%;
+            -webkit-tap-highlight-color: transparent;
         }
 
         html, body {
@@ -59,10 +125,6 @@
             overflow-x: hidden;
             word-wrap: break-word;
             overflow-wrap: anywhere;
-        }
-
-        *, *::before, *::after {
-            box-sizing: border-box;
         }
 
         body { 
@@ -75,9 +137,10 @@
             -moz-osx-font-smoothing: grayscale;
             min-height: 100vh;
             height: 100%;
+            font-size: 16px;
         }
 
-        /* Focus visible for better accessibility */
+        /* Improved Focus States */
         *:focus-visible {
             outline: 2px solid var(--brand-color);
             outline-offset: 2px;
@@ -88,33 +151,55 @@
             outline: none;
         }
 
-        /* WORKING SOLUTION: Flexbox layout with proper overflow handling */
+        /* Touch device improvements */
+        @media (hover: none) and (pointer: coarse) {
+            .nav-item,
+            .btn,
+            button,
+            a {
+                min-height: 44px;
+                min-width: 44px;
+            }
+        }
+
+        /* App Layout - Mobile First */
         .app-layout {
             display: flex;
+            flex-direction: column;
             min-height: 100vh;
             position: relative;
         }
 
-        /* CRITICAL: Sidebar with sticky positioning */
+        /* Desktop sidebar - Hidden on mobile */
         .sidebar-panel {
             background-color: var(--bg-sidebar);
-            position: -webkit-sticky; /* Safari support */
-            position: sticky;
-            top: 0;
-            align-self: flex-start; /* CRITICAL: Allows sticky to work in flexbox */
-            height: 100vh;
-            max-height: 100vh;
             width: var(--sidebar-width);
             min-width: var(--sidebar-width);
             flex-shrink: 0;
             overflow-y: auto;
             overflow-x: hidden;
-            display: flex;
+            display: none;
             flex-direction: column;
             padding: 2rem 1.5rem;
             border-right: 1px solid var(--border-color);
             scrollbar-width: thin;
             scrollbar-color: var(--border-color) transparent;
+        }
+
+        /* Show sidebar on large screens */
+        @media (min-width: 1200px) {
+            .app-layout {
+                flex-direction: row;
+            }
+            
+            .sidebar-panel {
+                display: flex;
+                position: sticky;
+                top: 0;
+                align-self: flex-start;
+                height: 100vh;
+                max-height: 100vh;
+            }
         }
         
         .sidebar-panel::-webkit-scrollbar {
@@ -145,14 +230,27 @@
             display: none;
         }
 
-        /* Main scroll area - FIXED */
+        /* Main scroll area - Mobile First */
         .main-scroll {
             background-color: var(--bg-body);
-            padding: 3rem 2rem;
+            padding: 1rem;
             min-height: 100vh;
             flex: 1 1 auto;
-            min-width: 0; /* Allow flex item to shrink below content size */
+            min-width: 0;
             overflow-x: hidden;
+            width: 100%;
+        }
+
+        @media (min-width: 768px) {
+            .main-scroll {
+                padding: 2rem 1.5rem;
+            }
+        }
+
+        @media (min-width: 1200px) {
+            .main-scroll {
+                padding: 3rem 2rem;
+            }
         }
         
         .content-container {
@@ -161,16 +259,23 @@
             width: 100%;
         }
 
-        /* Generic content boxes & cards for inner templates */
+        /* Content boxes - Mobile Optimized */
         .content-box {
             display: block;
             width: 100%;
-            padding: 1rem 1.25rem;
-            margin-bottom: 1.5rem;
+            padding: 0.875rem 1rem;
+            margin-bottom: 1rem;
             border-radius: var(--radius-sharp);
             border: 1px solid var(--border-color);
             background-color: #ffffff;
             box-shadow: var(--shadow-sharp);
+        }
+
+        @media (min-width: 768px) {
+            .content-box {
+                padding: 1rem 1.25rem;
+                margin-bottom: 1.5rem;
+            }
         }
 
         .thread-card,
@@ -180,8 +285,8 @@
         .category-card {
             display: block;
             width: 100%;
-            padding: 1rem 1.25rem;
-            margin-bottom: 1.25rem;
+            padding: 0.875rem 1rem;
+            margin-bottom: 1rem;
             border-radius: var(--radius-sharp);
             border: 1px solid var(--border-color);
             background-color: #ffffff;
@@ -190,32 +295,70 @@
             transition: box-shadow 0.2s ease, transform 0.2s ease;
         }
 
-        .thread-card:hover,
-        .reply-card:hover,
-        .category-card:hover {
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            transform: translateY(-1px);
+        @media (min-width: 768px) {
+            .thread-card,
+            .reply-card,
+            .report-card,
+            .tag-card,
+            .category-card {
+                padding: 1rem 1.25rem;
+                margin-bottom: 1.25rem;
+            }
+        }
+
+        /* Only hover effects on devices that support hover */
+        @media (hover: hover) and (pointer: fine) {
+            .thread-card:hover,
+            .reply-card:hover,
+            .category-card:hover {
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+                transform: translateY(-1px);
+            }
+        }
+
+        /* Tap feedback for touch devices */
+        @media (hover: none) and (pointer: coarse) {
+            .thread-card:active,
+            .reply-card:active,
+            .category-card:active {
+                opacity: 0.8;
+                transform: scale(0.99);
+            }
         }
 
         .thread-title,
         .reply-title,
         .card-title {
             font-weight: 600;
-            font-size: 1.05rem;
+            font-size: 1rem;
             margin-bottom: 0.25rem;
             overflow-wrap: anywhere;
             line-height: 1.4;
+        }
+
+        @media (min-width: 768px) {
+            .thread-title,
+            .reply-title,
+            .card-title {
+                font-size: 1.05rem;
+            }
         }
 
         .meta-row {
             display: flex;
             flex-wrap: wrap;
             gap: 0.5rem;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: var(--text-secondary);
         }
 
-        /* Forms and inputs */
+        @media (min-width: 768px) {
+            .meta-row {
+                font-size: 0.85rem;
+            }
+        }
+
+        /* Forms - Mobile Optimized */
         form {
             display: block;
             width: 100%;
@@ -237,15 +380,17 @@
             display: block;
             width: 100%;
             max-width: 100%;
-            padding: 0.5rem 0.75rem;
+            padding: 0.625rem 0.75rem;
             border: 1px solid #d1d5db;
             border-radius: 0.375rem;
             transition: border-color 0.15s ease, box-shadow 0.15s ease;
             font-family: inherit;
-            font-size: 1rem;
+            font-size: 16px; /* Prevents zoom on iOS */
             line-height: 1.5;
             color: var(--text-primary);
             background-color: #fff;
+            -webkit-appearance: none;
+            appearance: none;
         }
 
         input:focus,
@@ -270,13 +415,14 @@
             font-family: inherit;
         }
 
+        /* Buttons - Touch Optimized */
         .btn,
         button,
         input[type="submit"] {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            padding: 0.4rem 0.85rem;
+            padding: 0.5rem 1rem;
             border-radius: 0.375rem;
             border: none;
             cursor: pointer;
@@ -286,12 +432,18 @@
             font-weight: 500;
             text-decoration: none;
             line-height: 1.5;
+            min-height: 44px;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
-        .btn:hover:not(:disabled),
-        button:hover:not(:disabled) {
-            transform: translateY(-1px);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        @media (hover: hover) and (pointer: fine) {
+            .btn:hover:not(:disabled),
+            button:hover:not(:disabled) {
+                transform: translateY(-1px);
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
         }
 
         .btn:active:not(:disabled),
@@ -306,12 +458,22 @@
             transform: none !important;
         }
 
-        /* Tables */
+        /* Tables - Responsive */
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
-            table-layout: fixed;
             word-wrap: break-word;
+        }
+
+        @media (max-width: 767px) {
+            table {
+                font-size: 0.875rem;
+            }
         }
 
         th, td {
@@ -326,6 +488,7 @@
             background-color: #f9fafb;
         }
 
+        /* Navigation */
         .nav-item {
             display: flex;
             align-items: center;
@@ -337,12 +500,19 @@
             transition: all 0.15s ease;
             text-decoration: none;
             margin-bottom: 2px;
+            min-height: 44px;
+            touch-action: manipulation;
         }
         
         .nav-item:hover { 
             background-color: #F9FAFB; 
             color: var(--text-primary);
-            transform: translateX(2px);
+        }
+
+        @media (hover: hover) and (pointer: fine) {
+            .nav-item:hover {
+                transform: translateX(2px);
+            }
         }
         
         .nav-item.active { 
@@ -367,9 +537,16 @@
             background: #fff;
             border: 1px solid var(--border-color);
             border-radius: var(--radius-sharp);
-            padding: 1.5rem;
+            padding: 1.25rem;
             box-shadow: var(--shadow-sharp);
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.25rem;
+        }
+
+        @media (min-width: 768px) {
+            .widget-box {
+                padding: 1.5rem;
+                margin-bottom: 1.5rem;
+            }
         }
 
         .sidebar-label {
@@ -398,7 +575,7 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* Fade in animation for content */
+        /* Fade in animation */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -408,14 +585,83 @@
             animation: fadeIn 0.3s ease-out;
         }
 
-        /* Mobile menu */
+        /* Mobile header */
         .mobile-header {
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            z-index: 1000;
+            z-index: var(--z-sticky);
             background-color: #fff !important;
+            height: var(--header-height);
         }
 
-        /* Skip to content for accessibility */
+        /* Mobile sidebar */
+        .mobile-sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: var(--z-modal-backdrop);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            -webkit-backdrop-filter: blur(2px);
+            backdrop-filter: blur(2px);
+        }
+
+        .mobile-sidebar-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .mobile-sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            height: 100dvh; /* Dynamic viewport height for mobile browsers */
+            width: var(--sidebar-width);
+            max-width: 85vw;
+            background-color: var(--bg-sidebar);
+            z-index: var(--z-modal);
+            transform: translateX(-100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+            overflow-y: auto;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem 1.25rem;
+            box-shadow: 2px 0 16px rgba(0, 0, 0, 0.15);
+            -webkit-overflow-scrolling: touch;
+        }
+
+        @media (min-width: 768px) {
+            .mobile-sidebar {
+                padding: 2rem 1.5rem;
+            }
+        }
+
+        .mobile-sidebar.show {
+            transform: translateX(0);
+        }
+
+        /* Prevent body scroll when mobile menu open */
+        body.mobile-menu-open {
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* iOS Safari specific fixes */
+        @supports (-webkit-touch-callout: none) {
+            body.mobile-menu-open {
+                position: fixed;
+                overflow: hidden;
+            }
+        }
+
+        /* Skip to content */
         .skip-to-content {
             position: absolute;
             left: -9999px;
@@ -437,7 +683,7 @@
             color: white;
             text-decoration: none;
             border-radius: 4px;
-            z-index: 10000;
+            z-index: calc(var(--z-tooltip) + 1);
             font-weight: 600;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
@@ -445,17 +691,29 @@
         /* Empty states */
         .empty-state {
             text-align: center;
-            padding: 3rem 1rem;
+            padding: 2rem 1rem;
             color: var(--text-secondary);
         }
 
+        @media (min-width: 768px) {
+            .empty-state {
+                padding: 3rem 1rem;
+            }
+        }
+
         .empty-state-icon {
-            font-size: 3rem;
+            font-size: 2.5rem;
             opacity: 0.3;
             margin-bottom: 1rem;
         }
 
-        /* Error states */
+        @media (min-width: 768px) {
+            .empty-state-icon {
+                font-size: 3rem;
+            }
+        }
+
+        /* Messages */
         .error-message {
             background-color: #FEF2F2;
             border: 1px solid #FCA5A5;
@@ -465,7 +723,6 @@
             margin-bottom: 1rem;
         }
 
-        /* Success states */
         .success-message {
             background-color: #ECFDF5;
             border: 1px solid #6EE7B7;
@@ -475,7 +732,13 @@
             margin-bottom: 1rem;
         }
 
-        /* Image lazy loading blur effect */
+        /* Image handling */
+        img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+
         img[loading="lazy"] {
             filter: blur(0);
             transition: filter 0.3s;
@@ -491,7 +754,8 @@
             padding: 0.2rem 0.4rem;
             border-radius: 0.25rem;
             font-size: 0.875em;
-            font-family: 'Courier New', monospace;
+            font-family: 'Courier New', 'Monaco', monospace;
+            word-break: break-word;
         }
 
         pre {
@@ -501,6 +765,7 @@
             border-radius: var(--radius-sharp);
             overflow-x: auto;
             margin-bottom: 1rem;
+            -webkit-overflow-scrolling: touch;
         }
 
         pre code {
@@ -509,35 +774,77 @@
             color: inherit;
         }
 
-        /* Badge improvements */
+        /* Badge */
         .badge {
             font-weight: 500;
             padding: 0.25em 0.6em;
         }
 
-        /* Link styles */
+        /* Links */
         a {
             color: var(--brand-color);
             transition: color 0.15s ease;
+            text-decoration: none;
         }
 
         a:hover {
             color: #1d4ed8;
+            text-decoration: underline;
         }
 
-        /* Selection color */
+        /* Selection */
         ::selection {
             background-color: rgba(37, 99, 235, 0.2);
             color: var(--text-primary);
         }
 
+        ::-moz-selection {
+            background-color: rgba(37, 99, 235, 0.2);
+            color: var(--text-primary);
+        }
+
+        /* Dark mode styles */
+        [data-theme="dark"] body {
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+        }
+
+        [data-theme="dark"] .content-box,
+        [data-theme="dark"] .thread-card,
+        [data-theme="dark"] .reply-card,
+        [data-theme="dark"] .widget-box,
+        [data-theme="dark"] .mobile-sidebar,
+        [data-theme="dark"] .sidebar-panel {
+            background-color: var(--bg-sidebar);
+            border-color: var(--border-color);
+        }
+
+        [data-theme="dark"] input,
+        [data-theme="dark"] textarea,
+        [data-theme="dark"] select {
+            background-color: var(--bg-sidebar);
+            border-color: var(--border-color);
+            color: var(--text-primary);
+        }
+
+        [data-theme="dark"] .nav-item:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        [data-theme="dark"] .mobile-header {
+            background-color: var(--bg-sidebar) !important;
+        }
+
         /* Print styles */
         @media print {
             .sidebar-panel,
+            .mobile-sidebar,
+            .mobile-sidebar-overlay,
             .mobile-header,
             .btn,
             button,
-            .skip-to-content {
+            .skip-to-content,
+            .nav-item {
                 display: none !important;
             }
             
@@ -560,45 +867,20 @@
                 border: 1px solid #ddd;
                 page-break-inside: avoid;
             }
-        }
 
-        /* Responsive breakpoints */
-        @media (max-width: 1200px) {
-            .app-layout { 
-                display: block !important;
+            a {
+                color: #000;
+                text-decoration: underline;
             }
-            
-            .sidebar-panel { 
-                display: none !important;
-            } 
-            
-            .main-scroll { 
-                padding: 1rem;
-                width: 100%;
+
+            a[href]:after {
+                content: " (" attr(href) ")";
+                font-size: 0.8em;
+                font-weight: normal;
             }
         }
 
-        @media (max-width: 768px) {
-            .main-scroll {
-                padding: 0.75rem;
-            }
-
-            .content-box,
-            .thread-card,
-            .reply-card {
-                padding: 0.75rem 1rem;
-            }
-
-            h1, .h1 {
-                font-size: 1.75rem;
-            }
-
-            h2, .h2 {
-                font-size: 1.5rem;
-            }
-        }
-
-        /* Reduced motion for accessibility */
+        /* Reduced motion */
         @media (prefers-reduced-motion: reduce) {
             *,
             *::before,
@@ -610,59 +892,188 @@
             }
         }
 
-        /* Dark mode support */
-        @media (prefers-color-scheme: dark) {
-            [data-theme="auto"] {
-                --bg-body: #111827;
-                --bg-sidebar: #1f2937;
-                --text-primary: #f9fafb;
-                --text-secondary: #9ca3af;
-                --border-color: #374151;
+        /* High contrast mode support */
+        @media (prefers-contrast: high) {
+            :root {
+                --border-color: #000;
+                --text-secondary: #000;
+            }
+
+            .nav-item:hover {
+                outline: 2px solid currentColor;
             }
         }
 
-        [data-theme="dark"] {
-            --bg-body: #111827;
-            --bg-sidebar: #1f2937;
-            --text-primary: #f9fafb;
-            --text-secondary: #9ca3af;
-            --border-color: #374151;
+        /* Landscape orientation adjustments */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .mobile-sidebar {
+                padding: 1rem;
+            }
+
+            .nav-item {
+                padding: 0.5rem 0.75rem;
+                margin-bottom: 1px;
+            }
         }
 
-        [data-theme="dark"] body {
-            background-color: var(--bg-body);
-            color: var(--text-primary);
+        /* Tablet optimization */
+        @media (min-width: 768px) and (max-width: 1199px) {
+            .content-container {
+                max-width: 90%;
+            }
         }
 
-        [data-theme="dark"] .content-box,
-        [data-theme="dark"] .thread-card,
-        [data-theme="dark"] .reply-card,
-        [data-theme="dark"] .widget-box {
-            background-color: var(--bg-sidebar);
-            border-color: var(--border-color);
+        /* Ultra-wide screens */
+        @media (min-width: 1920px) {
+            .content-container {
+                max-width: 900px;
+            }
+        }
+
+        /* Utility classes for touch devices */
+        @media (hover: none) {
+            .hover-only {
+                display: none !important;
+            }
+        }
+
+        @media (hover: hover) {
+            .touch-only {
+                display: none !important;
+            }
+        }
+
+        /* Loading skeleton */
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 0px, #f8f8f8 40px, #f0f0f0 80px);
+            background-size: 1000px 100%;
+            animation: shimmer 2s infinite linear;
+        }
+
+        /* Safe area insets for notched devices */
+        @supports (padding: max(0px)) {
+            .mobile-sidebar {
+                padding-left: max(1.25rem, env(safe-area-inset-left));
+                padding-right: max(1.25rem, env(safe-area-inset-right));
+            }
+
+            .mobile-header {
+                padding-left: max(1rem, env(safe-area-inset-left));
+                padding-right: max(1rem, env(safe-area-inset-right));
+            }
         }
     </style>
     
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <!-- Skip to content for screen readers -->
+    <!-- Skip to content -->
     <a href="#main-content" class="skip-to-content">Skip to main content</a>
 
     <!-- Mobile header -->
-    <div class="mobile-header d-xl-none bg-white border-bottom p-3 sticky-top d-flex justify-content-between align-items-center">
-        <a href="{% url 'threads:category_list' %}" class="text-decoration-none">
+    <header class="mobile-header d-xl-none bg-white border-bottom p-3 sticky-top d-flex justify-content-between align-items-center" role="banner">
+        <a href="{% url 'threads:category_list' %}" class="text-decoration-none" aria-label="ForumDeck Home">
             <span class="fw-bold fs-5 text-dark">ForumDeck<span class="text-primary">.</span></span>
         </a>
-        <button class="btn btn-sm btn-light border" aria-label="Toggle menu" type="button">
+        <button class="btn btn-sm btn-light border" 
+                aria-label="Open navigation menu" 
+                aria-expanded="false"
+                aria-controls="mobile-sidebar"
+                type="button" 
+                id="mobile-menu-toggle">
             <i class="bi bi-list fs-4" aria-hidden="true"></i>
         </button>
-    </div>
+    </header>
+
+    <!-- Mobile sidebar overlay -->
+    <div class="mobile-sidebar-overlay d-xl-none" 
+         id="mobile-overlay" 
+         role="presentation"
+         aria-hidden="true"></div>
+
+    <!-- Mobile sidebar -->
+    <aside class="mobile-sidebar d-xl-none" 
+           id="mobile-sidebar" 
+           role="navigation" 
+           aria-label="Mobile navigation"
+           aria-hidden="true">
+        <div class="mb-4 px-2 d-flex justify-content-between align-items-center">
+            <a href="{% url 'threads:category_list' %}" class="text-decoration-none text-dark">
+                <h3 class="fw-bold m-0">ForumDeck<span class="text-primary">.</span></h3>
+            </a>
+            <button class="btn btn-sm btn-light border-0" 
+                    id="mobile-menu-close" 
+                    aria-label="Close navigation menu">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <nav class="d-flex flex-column flex-grow-1" role="navigation">
+            <a href="{% url 'threads:category_list' %}" 
+               class="nav-item {% if request.resolver_match.url_name == 'category_list' %}active{% endif %}" 
+               {% if request.resolver_match.url_name == 'category_list' %}aria-current="page"{% endif %}>
+                <i class="bi bi-grid-fill" aria-hidden="true"></i> 
+                <span>Categories</span>
+            </a>
+            
+            {% if user.is_staff %}
+            <div class="mt-4 mb-2 px-3 sidebar-label" role="separator">Admin</div>
+            <a href="{% url 'threads:report_list' %}" 
+               class="nav-item admin-link {% if 'report' in request.path %}active{% endif %}" 
+               {% if 'report' in request.path %}aria-current="page"{% endif %}>
+                <i class="bi bi-shield-lock-fill" aria-hidden="true"></i> 
+                <span>Moderation</span>
+            </a>
+            {% endif %}
+        </nav>
+
+        <div class="mt-auto pt-3 border-top">
+            {% if user.is_authenticated %}
+                <div class="d-flex align-items-center gap-3 px-2">
+                    {% if user.avatar %}
+                        <img src="{{ user.avatar }}" 
+                             class="rounded-circle object-fit-cover" 
+                             width="36" 
+                             height="36" 
+                             alt="Profile picture of {{ user.username }}" 
+                             loading="lazy"
+                             onerror="this.src='https://ui-avatars.com/api/?name={{ user.username|urlencode }}&background=000&color=fff'">
+                    {% else %}
+                        <img src="https://ui-avatars.com/api/?name={{ user.username|urlencode }}&background=000&color=fff" 
+                             class="rounded-circle" 
+                             width="36" 
+                             height="36" 
+                             alt="Profile picture of {{ user.username }}" 
+                             loading="lazy">
+                    {% endif %}
+                    
+                    <div class="lh-1 overflow-hidden flex-grow-1 min-w-0">
+                        <div class="small fw-bold text-dark text-truncate">{{ user.full_name|default:user.username }}</div>
+                        <div class="text-muted text-truncate" style="font-size: 0.75rem;">@{{ user.username }}</div>
+                    </div>
+                    
+                    <form action="{% url 'account_logout' %}" method="post" class="ms-auto">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-light border-0 text-muted" title="Log Out" aria-label="Log out">
+                            <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
+                        </button>
+                    </form>
+                </div>
+            {% else %}
+                <a href="{% url 'account_login' %}" class="btn btn-dark w-100 fw-bold" style="border-radius: var(--radius-sharp);">Sign In</a>
+            {% endif %}
+        </div>
+    </aside>
 
     <div class="app-layout">
         
-        <!-- Left sidebar -->
-        <aside class="sidebar-panel" role="navigation" aria-label="Main navigation">
+        <!-- Desktop left sidebar -->
+        <aside class="sidebar-panel d-none d-xl-flex" role="navigation" aria-label="Main navigation">
             <div class="mb-5 px-2">
                 <a href="{% url 'threads:category_list' %}" class="text-decoration-none text-dark">
                     <h3 class="fw-bold m-0 tracking-tight">ForumDeck<span class="text-primary">.</span></h3>
@@ -673,15 +1084,17 @@
                 <a href="{% url 'threads:category_list' %}" 
                    class="nav-item {% if request.resolver_match.url_name == 'category_list' %}active{% endif %}" 
                    {% if request.resolver_match.url_name == 'category_list' %}aria-current="page"{% endif %}>
-                    <i class="bi bi-grid-fill" aria-hidden="true"></i> Categories
+                    <i class="bi bi-grid-fill" aria-hidden="true"></i> 
+                    <span>Categories</span>
                 </a>
                 
                 {% if user.is_staff %}
-                <div class="mt-4 mb-2 px-3 sidebar-label">Admin</div>
+                <div class="mt-4 mb-2 px-3 sidebar-label" role="separator">Admin</div>
                 <a href="{% url 'threads:report_list' %}" 
                    class="nav-item admin-link {% if 'report' in request.path %}active{% endif %}" 
                    {% if 'report' in request.path %}aria-current="page"{% endif %}>
-                    <i class="bi bi-shield-lock-fill" aria-hidden="true"></i> Moderation
+                    <i class="bi bi-shield-lock-fill" aria-hidden="true"></i> 
+                    <span>Moderation</span>
                 </a>
                 {% endif %}
             </nav>
@@ -728,7 +1141,7 @@
         <main class="main-scroll" id="main-content" role="main">
             <div class="content-container">
                 {% if messages %}
-                    <div class="d-flex flex-column gap-3 mb-4" role="alert" aria-live="polite">
+                    <div class="d-flex flex-column gap-3 mb-4" role="alert" aria-live="polite" aria-atomic="true">
                         {% for message in messages %}
                         <div class="alert alert-{{ message.tags|default:'info' }} border shadow-sm d-flex align-items-center gap-3 py-3" role="alert">
                              <i class="bi bi-{% if message.tags == 'error' or message.tags == 'danger' %}exclamation-circle{% elif message.tags == 'success' %}check-circle{% elif message.tags == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %}-fill" aria-hidden="true"></i>
@@ -743,7 +1156,7 @@
         </main>
 
         <!-- Right sidebar -->
-        <aside class="sidebar-panel right" role="complementary" aria-label="Sidebar">
+        <aside class="sidebar-panel right d-none d-xl-flex" role="complementary" aria-label="Sidebar">
             {% block right_sidebar %}{% endblock %}
         </aside>
 
@@ -751,121 +1164,285 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            // Tag badge coloring
-            document.querySelectorAll('.tag-badge').forEach(badge => {
-                const color = badge.getAttribute('data-color');
-                if (color) {
-                    badge.style.borderColor = color;
-                    badge.style.color = color;
-                    badge.style.backgroundColor = '#FFFFFF';
+        (function() {
+            'use strict';
+            
+            document.addEventListener("DOMContentLoaded", function() {
+                // Mobile menu functionality with enhanced accessibility
+                const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+                const mobileMenuClose = document.getElementById('mobile-menu-close');
+                const mobileSidebar = document.getElementById('mobile-sidebar');
+                const mobileOverlay = document.getElementById('mobile-overlay');
+                let focusedElementBeforeOpen;
+                
+                function openMobileMenu() {
+                    focusedElementBeforeOpen = document.activeElement;
+                    mobileSidebar.classList.add('show');
+                    mobileOverlay.classList.add('show');
+                    document.body.classList.add('mobile-menu-open');
+                    mobileSidebar.setAttribute('aria-hidden', 'false');
+                    mobileMenuToggle.setAttribute('aria-expanded', 'true');
+                    
+                    // Focus first interactive element
+                    setTimeout(() => {
+                        const firstLink = mobileSidebar.querySelector('.nav-item');
+                        if (firstLink) firstLink.focus();
+                    }, 300);
+                }
+                
+                function closeMobileMenu() {
+                    mobileSidebar.classList.remove('show');
+                    mobileOverlay.classList.remove('show');
+                    document.body.classList.remove('mobile-menu-open');
+                    mobileSidebar.setAttribute('aria-hidden', 'true');
+                    mobileMenuToggle.setAttribute('aria-expanded', 'false');
+                    
+                    // Return focus to trigger button
+                    if (focusedElementBeforeOpen) {
+                        focusedElementBeforeOpen.focus();
+                    }
+                }
+                
+                if (mobileMenuToggle) {
+                    mobileMenuToggle.addEventListener('click', openMobileMenu);
+                }
+                
+                if (mobileMenuClose) {
+                    mobileMenuClose.addEventListener('click', closeMobileMenu);
+                }
+                
+                if (mobileOverlay) {
+                    mobileOverlay.addEventListener('click', closeMobileMenu);
+                }
+                
+                // Close mobile menu when clicking a link
+                if (mobileSidebar) {
+                    mobileSidebar.querySelectorAll('.nav-item').forEach(link => {
+                        link.addEventListener('click', closeMobileMenu);
+                    });
+                }
+                
+                // Close on escape key
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape' && mobileSidebar && mobileSidebar.classList.contains('show')) {
+                        closeMobileMenu();
+                    }
+                });
+
+                // Trap focus within mobile sidebar
+                if (mobileSidebar) {
+                    mobileSidebar.addEventListener('keydown', function(e) {
+                        if (e.key === 'Tab' && this.classList.contains('show')) {
+                            const focusableElements = this.querySelectorAll(
+                                'a[href], button:not([disabled]), textarea, input, select'
+                            );
+                            const firstElement = focusableElements[0];
+                            const lastElement = focusableElements[focusableElements.length - 1];
+
+                            if (e.shiftKey && document.activeElement === firstElement) {
+                                lastElement.focus();
+                                e.preventDefault();
+                            } else if (!e.shiftKey && document.activeElement === lastElement) {
+                                firstElement.focus();
+                                e.preventDefault();
+                            }
+                        }
+                    });
+                }
+
+                // Tag badge coloring
+                document.querySelectorAll('.tag-badge').forEach(badge => {
+                    const color = badge.getAttribute('data-color');
+                    if (color) {
+                        badge.style.borderColor = color;
+                        badge.style.color = color;
+                        badge.style.backgroundColor = '#FFFFFF';
+                    }
+                });
+
+                // Form submission loading state with enhanced error handling
+                const submittedForms = new WeakSet();
+                document.querySelectorAll('form').forEach(form => {
+                    form.addEventListener('submit', function(e) {
+                        if (submittedForms.has(this)) {
+                            e.preventDefault();
+                            return false;
+                        }
+                        
+                        const submitBtn = this.querySelector('button[type="submit"], input[type="submit"]');
+                        if (submitBtn && !submitBtn.disabled) {
+                            submitBtn.disabled = true;
+                            const originalText = submitBtn.innerHTML || submitBtn.value;
+                            
+                            if (submitBtn.tagName === 'BUTTON') {
+                                submitBtn.innerHTML = '<span class="loading-spinner me-2"></span> Processing...';
+                            }
+                            
+                            submittedForms.add(this);
+                            
+                            // Re-enable after timeout as fallback
+                            setTimeout(() => {
+                                submitBtn.disabled = false;
+                                if (submitBtn.tagName === 'BUTTON') {
+                                    submitBtn.innerHTML = originalText;
+                                }
+                                submittedForms.delete(this);
+                            }, 10000);
+                        }
+                    });
+                });
+
+                // Smooth scroll to anchors
+                document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                    anchor.addEventListener('click', function (e) {
+                        const href = this.getAttribute('href');
+                        if (href && href !== '#' && href !== '#!' && href.length > 1) {
+                            e.preventDefault();
+                            const target = document.querySelector(href);
+                            if (target) {
+                                target.scrollIntoView({
+                                    behavior: 'smooth',
+                                    block: 'start'
+                                });
+                                // Update URL without page jump
+                                if (history.pushState) {
+                                    history.pushState(null, null, href);
+                                }
+                                // Focus target for accessibility
+                                target.focus({preventScroll: true});
+                            }
+                        }
+                    });
+                });
+
+                // Auto-dismiss alerts
+                document.querySelectorAll('.alert').forEach(alert => {
+                    const dismissTimer = setTimeout(() => {
+                        if (typeof bootstrap !== 'undefined' && bootstrap.Alert) {
+                            try {
+                                const bsAlert = new bootstrap.Alert(alert);
+                                bsAlert.close();
+                            } catch (e) {
+                                console.warn('Failed to close alert:', e);
+                            }
+                        }
+                    }, 5000);
+                    
+                    // Clear timer if user interacts with alert
+                    alert.addEventListener('click', () => {
+                        clearTimeout(dismissTimer);
+                    });
+                });
+
+                // Enhanced image error handling
+                document.querySelectorAll('img').forEach(img => {
+                    img.addEventListener('error', function() {
+                        if (!this.dataset.errorHandled) {
+                            this.dataset.errorHandled = 'true';
+                            const username = (this.alt || 'User')
+                                .replace('Profile picture of ', '')
+                                .replace('Profile picture', '')
+                                .trim() || 'User';
+                            this.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=random&size=128`;
+                        }
+                    });
+                });
+
+                // External link security
+                document.querySelectorAll('a[target="_blank"]').forEach(link => {
+                    link.setAttribute('rel', 'noopener noreferrer');
+                });
+
+                // Lazy load images with IntersectionObserver
+                if ('IntersectionObserver' in window) {
+                    const imageObserver = new IntersectionObserver((entries, observer) => {
+                        entries.forEach(entry => {
+                            if (entry.isIntersecting) {
+                                const img = entry.target;
+                                if (img.dataset.src) {
+                                    img.src = img.dataset.src;
+                                    img.removeAttribute('data-src');
+                                }
+                                observer.unobserve(img);
+                            }
+                        });
+                    }, {
+                        rootMargin: '50px 0px',
+                        threshold: 0.01
+                    });
+
+                    document.querySelectorAll('img[data-src]').forEach(img => {
+                        imageObserver.observe(img);
+                    });
+                }
+
+                // Performance monitoring
+                if ('performance' in window && 'PerformanceObserver' in window) {
+                    try {
+                        const perfObserver = new PerformanceObserver((list) => {
+                            for (const entry of list.getEntries()) {
+                                if (entry.entryType === 'navigation') {
+                                    console.debug('Page load time:', entry.loadEventEnd - entry.fetchStart, 'ms');
+                                }
+                            }
+                        });
+                        perfObserver.observe({ entryTypes: ['navigation'] });
+                    } catch (e) {
+                        // Silently fail if PerformanceObserver not supported
+                    }
+                }
+
+                // Service Worker registration (if available)
+                if ('serviceWorker' in navigator) {
+                    window.addEventListener('load', function() {
+                        // Uncomment to enable service worker
+                        // navigator.serviceWorker.register('/sw.js').then(function(registration) {
+                        //     console.log('ServiceWorker registered:', registration);
+                        // }).catch(function(error) {
+                        //     console.log('ServiceWorker registration failed:', error);
+                        // });
+                    });
+                }
+
+                // Console easter egg
+                const styles = {
+                    title: 'font-size: 24px; font-weight: bold; color: #2563EB; text-shadow: 2px 2px 4px rgba(37,99,235,0.3);',
+                    subtitle: 'font-size: 12px; color: #6B7280; font-style: italic;'
+                };
+                
+                console.log('%cForumDeck 💬', styles.title);
+                console.log('%cBuilt with Django & Bootstrap • Optimized for all devices', styles.subtitle);
+                
+                // Debug info in development
+                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                    console.debug('Device info:', {
+                        userAgent: navigator.userAgent,
+                        viewport: `${window.innerWidth}x${window.innerHeight}`,
+                        touch: 'ontouchstart' in window,
+                        connection: navigator.connection ? navigator.connection.effectiveType : 'unknown'
+                    });
                 }
             });
 
-            // Form submission loading state with debounce
-            const submittedForms = new WeakSet();
-            document.querySelectorAll('form').forEach(form => {
-                form.addEventListener('submit', function(e) {
-                    if (submittedForms.has(this)) {
-                        e.preventDefault();
-                        return false;
-                    }
-                    
-                    const submitBtn = this.querySelector('button[type="submit"]');
-                    if (submitBtn && !submitBtn.disabled) {
-                        submitBtn.disabled = true;
-                        const originalText = submitBtn.innerHTML;
-                        submitBtn.innerHTML = '<span class="loading-spinner me-2"></span> Processing...';
-                        submittedForms.add(this);
-                        
-                        // Re-enable after 5 seconds as fallback
-                        setTimeout(() => {
-                            submitBtn.disabled = false;
-                            submitBtn.innerHTML = originalText;
-                            submittedForms.delete(this);
-                        }, 5000);
-                    }
-                });
+            // Handle viewport height changes (especially on mobile)
+            let vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty('--vh', `${vh}px`);
+
+            window.addEventListener('resize', () => {
+                let vh = window.innerHeight * 0.01;
+                document.documentElement.style.setProperty('--vh', `${vh}px`);
             });
 
-            // Smooth scroll to anchors
-            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-                anchor.addEventListener('click', function (e) {
-                    const href = this.getAttribute('href');
-                    if (href !== '#' && href !== '#!' && href.length > 1) {
-                        e.preventDefault();
-                        const target = document.querySelector(href);
-                        if (target) {
-                            target.scrollIntoView({
-                                behavior: 'smooth',
-                                block: 'start'
-                            });
-                            if (history.pushState) {
-                                history.pushState(null, null, href);
-                            }
-                        }
-                    }
-                });
-            });
-
-            // Auto-dismiss alerts after 5 seconds
-            document.querySelectorAll('.alert').forEach(alert => {
-                setTimeout(() => {
-                    if (typeof bootstrap !== 'undefined' && bootstrap.Alert) {
-                        const bsAlert = new bootstrap.Alert(alert);
-                        bsAlert.close();
-                    }
-                }, 5000);
-            });
-
-            // Image error handling with retry
-            document.querySelectorAll('img').forEach(img => {
-                img.addEventListener('error', function() {
-                    if (!this.dataset.errorHandled) {
-                        this.dataset.errorHandled = 'true';
-                        const username = this.alt.replace('Profile picture of ', '').replace('Profile picture', 'User');
-                        this.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=random`;
-                    }
-                });
-            });
-
-            // External link indicator
-            document.querySelectorAll('a[target="_blank"]').forEach(link => {
-                link.setAttribute('rel', 'noopener noreferrer');
-            });
-
-            // Lazy load images observer
-            if ('IntersectionObserver' in window) {
-                const imageObserver = new IntersectionObserver((entries, observer) => {
-                    entries.forEach(entry => {
-                        if (entry.isIntersecting) {
-                            const img = entry.target;
-                            if (img.dataset.src) {
-                                img.src = img.dataset.src;
-                                img.removeAttribute('data-src');
-                            }
-                            observer.unobserve(img);
-                        }
-                    });
-                }, {
-                    rootMargin: '50px'
-                });
-
-                document.querySelectorAll('img[data-src]').forEach(img => {
-                    imageObserver.observe(img);
-                });
-            }
-
-            // Console easter egg
-            console.log(
-                '%cForumDeck 💬',
-                'font-size: 24px; font-weight: bold; color: #2563EB;'
-            );
-            console.log(
-                '%cBuilt with Django & Bootstrap',
-                'font-size: 12px; color: #6B7280;'
-            );
-        });
+            // Prevent double-tap zoom on specific elements
+            let lastTouchEnd = 0;
+            document.addEventListener('touchend', function (event) {
+                const now = Date.now();
+                if (now - lastTouchEnd <= 300) {
+                    event.preventDefault();
+                }
+                lastTouchEnd = now;
+            }, false);
+        })();
     </script>
     
     {% block extra_js %}{% endblock %}
