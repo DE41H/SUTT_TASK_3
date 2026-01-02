@@ -225,7 +225,7 @@
             border-left: 1px solid var(--border-color);
         }
 
-        /* Hide empty right sidebar */
+        /* Hide empty right sidebar on desktop */
         .sidebar-panel.right:empty {
             display: none;
         }
@@ -385,7 +385,7 @@
             border-radius: 0.375rem;
             transition: border-color 0.15s ease, box-shadow 0.15s ease;
             font-family: inherit;
-            font-size: 16px; /* Prevents zoom on iOS */
+            font-size: 16px;
             line-height: 1.5;
             color: var(--text-primary);
             background-color: #fff;
@@ -619,9 +619,9 @@
             top: 0;
             left: 0;
             height: 100%;
-            height: 100dvh; /* Dynamic viewport height for mobile browsers */
+            height: 100dvh;
             width: var(--sidebar-width);
-            max-width: 85vw;
+            max-width: 90vw;
             background-color: var(--bg-sidebar);
             z-index: var(--z-modal);
             transform: translateX(-100%);
@@ -630,19 +630,88 @@
             overflow-x: hidden;
             display: flex;
             flex-direction: column;
-            padding: 1.5rem 1.25rem;
             box-shadow: 2px 0 16px rgba(0, 0, 0, 0.15);
             -webkit-overflow-scrolling: touch;
         }
 
-        @media (min-width: 768px) {
-            .mobile-sidebar {
-                padding: 2rem 1.5rem;
-            }
-        }
-
         .mobile-sidebar.show {
             transform: translateX(0);
+        }
+
+        /* Mobile sidebar header */
+        .mobile-sidebar-header {
+            padding: 1.5rem 1.25rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+
+        /* Mobile sidebar tabs */
+        .mobile-sidebar-tabs {
+            display: flex;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+            background-color: #F9FAFB;
+            border-bottom: 2px solid var(--border-color);
+            flex-shrink: 0;
+        }
+
+        .mobile-sidebar-tab {
+            flex: 1;
+            padding: 0.5rem;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.875rem;
+            border-radius: 0.375rem;
+            border: none;
+            background-color: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            min-height: 40px;
+            position: relative;
+        }
+
+        .mobile-sidebar-tab.active {
+            background-color: white;
+            color: var(--brand-color);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .mobile-sidebar-tab:not(.active):hover {
+            background-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .mobile-sidebar-tab.has-content::after {
+            content: '';
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 6px;
+            height: 6px;
+            background-color: var(--brand-color);
+            border-radius: 50%;
+        }
+
+        /* Mobile sidebar content */
+        .mobile-sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem 1.25rem;
+        }
+
+        .mobile-sidebar-pane {
+            display: none;
+        }
+
+        .mobile-sidebar-pane.active {
+            display: block;
+        }
+
+        /* Mobile sidebar footer */
+        .mobile-sidebar-footer {
+            padding: 1rem 1.25rem;
+            border-top: 1px solid var(--border-color);
+            flex-shrink: 0;
         }
 
         /* Prevent body scroll when mobile menu open */
@@ -835,6 +904,14 @@
             background-color: var(--bg-sidebar) !important;
         }
 
+        [data-theme="dark"] .mobile-sidebar-tabs {
+            background-color: rgba(0, 0, 0, 0.2);
+        }
+
+        [data-theme="dark"] .mobile-sidebar-tab.active {
+            background-color: var(--bg-sidebar);
+        }
+
         /* Print styles */
         @media print {
             .sidebar-panel,
@@ -907,7 +984,7 @@
         /* Landscape orientation adjustments */
         @media (max-height: 500px) and (orientation: landscape) {
             .mobile-sidebar {
-                padding: 1rem;
+                padding: 0.5rem;
             }
 
             .nav-item {
@@ -930,7 +1007,7 @@
             }
         }
 
-        /* Utility classes for touch devices */
+        /* Utility classes */
         @media (hover: none) {
             .hover-only {
                 display: none !important;
@@ -955,11 +1032,11 @@
             animation: shimmer 2s infinite linear;
         }
 
-        /* Safe area insets for notched devices */
+        /* Safe area insets */
         @supports (padding: max(0px)) {
             .mobile-sidebar {
-                padding-left: max(1.25rem, env(safe-area-inset-left));
-                padding-right: max(1.25rem, env(safe-area-inset-right));
+                padding-left: max(0, env(safe-area-inset-left));
+                padding-right: max(0, env(safe-area-inset-right));
             }
 
             .mobile-header {
@@ -972,7 +1049,6 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <!-- Skip to content -->
     <a href="#main-content" class="skip-to-content">Skip to main content</a>
 
     <!-- Mobile header -->
@@ -996,45 +1072,81 @@
          role="presentation"
          aria-hidden="true"></div>
 
-    <!-- Mobile sidebar -->
+    <!-- Mobile sidebar with tabs -->
     <aside class="mobile-sidebar d-xl-none" 
            id="mobile-sidebar" 
            role="navigation" 
            aria-label="Mobile navigation"
            aria-hidden="true">
-        <div class="mb-4 px-2 d-flex justify-content-between align-items-center">
-            <a href="{% url 'threads:category_list' %}" class="text-decoration-none text-dark">
-                <h3 class="fw-bold m-0">ForumDeck<span class="text-primary">.</span></h3>
-            </a>
-            <button class="btn btn-sm btn-light border-0" 
-                    id="mobile-menu-close" 
-                    aria-label="Close navigation menu">
-                <i class="bi bi-x-lg"></i>
+        
+        <!-- Header -->
+        <div class="mobile-sidebar-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <a href="{% url 'threads:category_list' %}" class="text-decoration-none text-dark">
+                    <h3 class="fw-bold m-0">ForumDeck<span class="text-primary">.</span></h3>
+                </a>
+                <button class="btn btn-sm btn-light border-0" 
+                        id="mobile-menu-close" 
+                        aria-label="Close navigation menu">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="mobile-sidebar-tabs">
+            <button class="mobile-sidebar-tab active" 
+                    data-tab="nav" 
+                    type="button"
+                    aria-label="Navigation">
+                <i class="bi bi-grid-3x3-gap-fill"></i> Menu
+            </button>
+            <button class="mobile-sidebar-tab" 
+                    data-tab="info" 
+                    type="button"
+                    aria-label="Information"
+                    id="info-tab-button">
+                <i class="bi bi-info-circle-fill"></i> Info
             </button>
         </div>
 
-        <nav class="d-flex flex-column flex-grow-1" role="navigation">
-            <a href="{% url 'threads:category_list' %}" 
-               class="nav-item {% if request.resolver_match.url_name == 'category_list' %}active{% endif %}" 
-               {% if request.resolver_match.url_name == 'category_list' %}aria-current="page"{% endif %}>
-                <i class="bi bi-grid-fill" aria-hidden="true"></i> 
-                <span>Categories</span>
-            </a>
-            
-            {% if user.is_staff %}
-            <div class="mt-4 mb-2 px-3 sidebar-label" role="separator">Admin</div>
-            <a href="{% url 'threads:report_list' %}" 
-               class="nav-item admin-link {% if 'report' in request.path %}active{% endif %}" 
-               {% if 'report' in request.path %}aria-current="page"{% endif %}>
-                <i class="bi bi-shield-lock-fill" aria-hidden="true"></i> 
-                <span>Moderation</span>
-            </a>
-            {% endif %}
-        </nav>
+        <!-- Content -->
+        <div class="mobile-sidebar-content">
+            <!-- Navigation pane -->
+            <div class="mobile-sidebar-pane active" data-pane="nav">
+                <nav class="d-flex flex-column" role="navigation">
+                    <a href="{% url 'threads:category_list' %}" 
+                       class="nav-item {% if request.resolver_match.url_name == 'category_list' %}active{% endif %}" 
+                       {% if request.resolver_match.url_name == 'category_list' %}aria-current="page"{% endif %}>
+                        <i class="bi bi-grid-fill" aria-hidden="true"></i> 
+                        <span>Categories</span>
+                    </a>
+                    
+                    {% if user.is_staff %}
+                    <div class="mt-4 mb-2 px-3 sidebar-label" role="separator">Admin</div>
+                    <a href="{% url 'threads:report_list' %}" 
+                       class="nav-item admin-link {% if 'report' in request.path %}active{% endif %}" 
+                       {% if 'report' in request.path %}aria-current="page"{% endif %}>
+                        <i class="bi bi-shield-lock-fill" aria-hidden="true"></i> 
+                        <span>Moderation</span>
+                    </a>
+                    {% endif %}
+                </nav>
+            </div>
 
-        <div class="mt-auto pt-3 border-top">
+            <!-- Info pane (auto-populated from right sidebar) -->
+            <div class="mobile-sidebar-pane" data-pane="info" id="mobile-info-pane">
+                <div class="empty-state">
+                    <div class="empty-state-icon">📋</div>
+                    <p class="text-muted small">No additional information available</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="mobile-sidebar-footer">
             {% if user.is_authenticated %}
-                <div class="d-flex align-items-center gap-3 px-2">
+                <div class="d-flex align-items-center gap-3">
                     {% if user.avatar %}
                         <img src="{{ user.avatar }}" 
                              class="rounded-circle object-fit-cover" 
@@ -1155,8 +1267,8 @@
             </div>
         </main>
 
-        <!-- Right sidebar -->
-        <aside class="sidebar-panel right d-none d-xl-flex" role="complementary" aria-label="Sidebar">
+        <!-- Right sidebar (desktop only) -->
+        <aside class="sidebar-panel right d-none d-xl-flex" role="complementary" aria-label="Sidebar" id="desktop-right-sidebar">
             {% block right_sidebar %}{% endblock %}
         </aside>
 
@@ -1168,7 +1280,39 @@
             'use strict';
             
             document.addEventListener("DOMContentLoaded", function() {
-                // Mobile menu functionality with enhanced accessibility
+                // Auto-clone right sidebar content to mobile
+                function syncRightSidebar() {
+                    const desktopRightSidebar = document.getElementById('desktop-right-sidebar');
+                    const mobileInfoPane = document.getElementById('mobile-info-pane');
+                    const infoTabButton = document.getElementById('info-tab-button');
+                    
+                    if (desktopRightSidebar && mobileInfoPane && infoTabButton) {
+                        const hasContent = desktopRightSidebar.innerHTML.trim() !== '';
+                        
+                        if (hasContent) {
+                            // Clone content
+                            mobileInfoPane.innerHTML = desktopRightSidebar.innerHTML;
+                            
+                            // Add indicator badge
+                            infoTabButton.classList.add('has-content');
+                        }
+                    }
+                }
+                
+                // Run sync immediately
+                syncRightSidebar();
+                
+                // Re-sync if DOM changes (for dynamic content)
+                const observer = new MutationObserver(syncRightSidebar);
+                const desktopSidebar = document.getElementById('desktop-right-sidebar');
+                if (desktopSidebar) {
+                    observer.observe(desktopSidebar, {
+                        childList: true,
+                        subtree: true
+                    });
+                }
+
+                // Mobile menu functionality
                 const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
                 const mobileMenuClose = document.getElementById('mobile-menu-close');
                 const mobileSidebar = document.getElementById('mobile-sidebar');
@@ -1183,10 +1327,9 @@
                     mobileSidebar.setAttribute('aria-hidden', 'false');
                     mobileMenuToggle.setAttribute('aria-expanded', 'true');
                     
-                    // Focus first interactive element
                     setTimeout(() => {
-                        const firstLink = mobileSidebar.querySelector('.nav-item');
-                        if (firstLink) firstLink.focus();
+                        const firstTab = mobileSidebar.querySelector('.mobile-sidebar-tab');
+                        if (firstTab) firstTab.focus();
                     }, 300);
                 }
                 
@@ -1197,7 +1340,6 @@
                     mobileSidebar.setAttribute('aria-hidden', 'true');
                     mobileMenuToggle.setAttribute('aria-expanded', 'false');
                     
-                    // Return focus to trigger button
                     if (focusedElementBeforeOpen) {
                         focusedElementBeforeOpen.focus();
                     }
@@ -1215,7 +1357,29 @@
                     mobileOverlay.addEventListener('click', closeMobileMenu);
                 }
                 
-                // Close mobile menu when clicking a link
+                // Tab switching
+                document.querySelectorAll('.mobile-sidebar-tab').forEach(tab => {
+                    tab.addEventListener('click', function() {
+                        const targetPane = this.getAttribute('data-tab');
+                        
+                        // Update tabs
+                        document.querySelectorAll('.mobile-sidebar-tab').forEach(t => {
+                            t.classList.remove('active');
+                        });
+                        this.classList.add('active');
+                        
+                        // Update panes
+                        document.querySelectorAll('.mobile-sidebar-pane').forEach(pane => {
+                            pane.classList.remove('active');
+                        });
+                        const pane = document.querySelector(`.mobile-sidebar-pane[data-pane="${targetPane}"]`);
+                        if (pane) {
+                            pane.classList.add('active');
+                        }
+                    });
+                });
+                
+                // Close mobile menu when clicking nav link
                 if (mobileSidebar) {
                     mobileSidebar.querySelectorAll('.nav-item').forEach(link => {
                         link.addEventListener('click', closeMobileMenu);
@@ -1260,7 +1424,7 @@
                     }
                 });
 
-                // Form submission loading state with enhanced error handling
+                // Form submission loading state
                 const submittedForms = new WeakSet();
                 document.querySelectorAll('form').forEach(form => {
                     form.addEventListener('submit', function(e) {
@@ -1280,7 +1444,6 @@
                             
                             submittedForms.add(this);
                             
-                            // Re-enable after timeout as fallback
                             setTimeout(() => {
                                 submitBtn.disabled = false;
                                 if (submitBtn.tagName === 'BUTTON') {
@@ -1304,11 +1467,9 @@
                                     behavior: 'smooth',
                                     block: 'start'
                                 });
-                                // Update URL without page jump
                                 if (history.pushState) {
                                     history.pushState(null, null, href);
                                 }
-                                // Focus target for accessibility
                                 target.focus({preventScroll: true});
                             }
                         }
@@ -1328,13 +1489,12 @@
                         }
                     }, 5000);
                     
-                    // Clear timer if user interacts with alert
                     alert.addEventListener('click', () => {
                         clearTimeout(dismissTimer);
                     });
                 });
 
-                // Enhanced image error handling
+                // Image error handling
                 document.querySelectorAll('img').forEach(img => {
                     img.addEventListener('error', function() {
                         if (!this.dataset.errorHandled) {
@@ -1353,7 +1513,7 @@
                     link.setAttribute('rel', 'noopener noreferrer');
                 });
 
-                // Lazy load images with IntersectionObserver
+                // Lazy load images
                 if ('IntersectionObserver' in window) {
                     const imageObserver = new IntersectionObserver((entries, observer) => {
                         entries.forEach(entry => {
@@ -1376,55 +1536,12 @@
                     });
                 }
 
-                // Performance monitoring
-                if ('performance' in window && 'PerformanceObserver' in window) {
-                    try {
-                        const perfObserver = new PerformanceObserver((list) => {
-                            for (const entry of list.getEntries()) {
-                                if (entry.entryType === 'navigation') {
-                                    console.debug('Page load time:', entry.loadEventEnd - entry.fetchStart, 'ms');
-                                }
-                            }
-                        });
-                        perfObserver.observe({ entryTypes: ['navigation'] });
-                    } catch (e) {
-                        // Silently fail if PerformanceObserver not supported
-                    }
-                }
-
-                // Service Worker registration (if available)
-                if ('serviceWorker' in navigator) {
-                    window.addEventListener('load', function() {
-                        // Uncomment to enable service worker
-                        // navigator.serviceWorker.register('/sw.js').then(function(registration) {
-                        //     console.log('ServiceWorker registered:', registration);
-                        // }).catch(function(error) {
-                        //     console.log('ServiceWorker registration failed:', error);
-                        // });
-                    });
-                }
-
                 // Console easter egg
-                const styles = {
-                    title: 'font-size: 24px; font-weight: bold; color: #2563EB; text-shadow: 2px 2px 4px rgba(37,99,235,0.3);',
-                    subtitle: 'font-size: 12px; color: #6B7280; font-style: italic;'
-                };
-                
-                console.log('%cForumDeck 💬', styles.title);
-                console.log('%cBuilt with Django & Bootstrap • Optimized for all devices', styles.subtitle);
-                
-                // Debug info in development
-                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                    console.debug('Device info:', {
-                        userAgent: navigator.userAgent,
-                        viewport: `${window.innerWidth}x${window.innerHeight}`,
-                        touch: 'ontouchstart' in window,
-                        connection: navigator.connection ? navigator.connection.effectiveType : 'unknown'
-                    });
-                }
+                console.log('%cForumDeck 💬', 'font-size: 24px; font-weight: bold; color: #2563EB;');
+                console.log('%cBuilt with Django & Bootstrap', 'font-size: 12px; color: #6B7280;');
             });
 
-            // Handle viewport height changes (especially on mobile)
+            // Handle viewport height changes
             let vh = window.innerHeight * 0.01;
             document.documentElement.style.setProperty('--vh', `${vh}px`);
 
@@ -1433,7 +1550,7 @@
                 document.documentElement.style.setProperty('--vh', `${vh}px`);
             });
 
-            // Prevent double-tap zoom on specific elements
+            // Prevent double-tap zoom
             let lastTouchEnd = 0;
             document.addEventListener('touchend', function (event) {
                 const now = Date.now();
