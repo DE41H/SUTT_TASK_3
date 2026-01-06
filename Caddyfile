@@ -1,5 +1,4 @@
-forumdeck.sreyash.tech {
-    encode zstd gzip
+:8002 {
     header {
         Permissions-Policy "interest-cohort=()"
         Strict-Transport-Security "max-age=31536000;"

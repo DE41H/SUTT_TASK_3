@@ -1,10 +1,9 @@
 services:
   caddy:
+    container_name: forumdeck_caddy
     image: caddy:latest
-    ports:
-      - 80:80
-      - 443:443/tcp
-      - 443:443/udp
+    expose:
+      - "8002"
     depends_on:
       - web
     volumes:
@@ -14,6 +13,9 @@ services:
       - caddy_data:/data
       - caddy_config:/config
     restart: always
+    networks:
+      - web-gateway
+      - private
   web:
     env_file:
       - .env.prod
@@ -34,6 +36,8 @@ services:
       python manage.py collectstatic --no-input && 
       gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --max-requests 500 --max-requests-jitter 50"
     restart: always
+    networks:
+      - private
   db:
     image: postgres:14-alpine
     env_file:
@@ -48,6 +52,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - private
 
 volumes:
   postgres_data:
@@ -55,3 +61,10 @@ volumes:
   media_volume:
   caddy_data:
   caddy_config:
+
+networks:
+  web-gateway:
+    external: true
+  private:
+    driver: bridge
+
