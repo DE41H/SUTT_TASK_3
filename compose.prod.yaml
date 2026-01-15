@@ -1,6 +1,5 @@
 services:
   caddy:
-    container_name: forumdeck_caddy
     image: caddy:latest
     ports:
       - 8002:80
