@@ -30,4 +30,4 @@ def queue_mass_mail(messages):
     ).start()
 
 def generate_random_color():
-    return hex(random.randint(0x000000, 0xFFFFFF))
+    return f'#{random.randint(0, 0xFFFFFF):06x}'
