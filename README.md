@@ -22,7 +22,7 @@ A robust, full-stack discussion platform tailored for academic environments. Bui
 
 ### 🛡️ Moderation & Safety
 *   **User Reporting System:** Users can report threads or replies. Admins view a dedicated **Moderation Queue**.
-*   **Automatic Content Sanitization:** Uses `nh3` (Ammonia) to prevent XSS attacks while allowing safe HTML.
+*   **Automatic Content Sanitization:** Uses `bleach` to prevent XSS attacks while allowing safe HTML.
 *   **Rate Limiting:** Prevents spam by limiting how fast users can post or report content.
 *   **Soft Deletion:** "Deleted" content is hidden from view but preserved in the database for audit trails.
 *   **Lock Threads:** Moderators can freeze discussions to prevent further replies.
